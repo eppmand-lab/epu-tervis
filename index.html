@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Epu tervis</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8A4A4">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Epu tervis">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab-btn active" data-tab="dashboard">🏠 <span>Ülevaade</span></button>
+    <button class="tab-btn" data-tab="nutrition">🍽️ <span>Toitumine</span></button>
+    <button class="tab-btn" data-tab="workouts">🏋️ <span>Treening</span></button>
+    <button class="tab-btn" data-tab="gymplans">💪 <span>Jõusaali kavad</span></button>
+    <button class="tab-btn" data-tab="measurements">📏 <span>Mõõdud</span></button>
+    <button class="tab-btn" data-tab="cycle">🌸 <span>Tsükkel</span></button>
+    <button class="tab-btn" data-tab="water">💧 <span>Vesi</span></button>
+    <button class="tab-btn" data-tab="photos">📷 <span>Fotod</span></button>
+    <button class="tab-btn" data-tab="settings">⚙️ <span>Seaded</span></button>
+  </nav>
+
+  <main class="content">
+
+    <section id="tab-dashboard" class="tab-panel active">
+      <header class="panel-header">
+        <h1 id="dashboard-greeting">Tere!</h1>
+        <p class="muted" id="dashboard-date"></p>
+      </header>
+      <div class="grid dashboard-grid" id="dashboard-cards"></div>
+      <div id="weekly-analysis-card"></div>
+    </section>
+
+    <section id="tab-nutrition" class="tab-panel">
+      <header class="panel-header"><h1>Toitumispäevik</h1></header>
+      <div class="card">
+        <div class="macro-summary" id="macro-summary"></div>
+      </div>
+      <div class="card">
+        <h2>Lisa toit</h2>
+        <div class="search-row">
+          <input type="text" id="food-search-input" placeholder="Otsi toitu (nt. kaerahelbed)...">
+          <button class="btn btn-secondary" id="food-search-btn">Otsi</button>
+        </div>
+        <div id="food-search-results" class="search-results"></div>
+        <div id="manual-food-form" class="manual-food-form hidden"></div>
+      </div>
+      <div class="card">
+        <h2>Tänane päevik</h2>
+        <div id="food-log-list"></div>
+      </div>
+    </section>
+
+    <section id="tab-workouts" class="tab-panel">
+      <header class="panel-header"><h1>Treeninglogi</h1></header>
+      <div class="card">
+        <h2>Uus treening</h2>
+        <form id="workout-form" class="stacked-form">
+          <div class="form-row">
+            <label>Kuupäev
+              <input type="date" id="workout-date" required>
+            </label>
+            <label>Treeningu tüüp
+              <input type="text" id="workout-type" placeholder="nt. Jõusaal - ülakeha" required>
+            </label>
+            <label>Kestus (min)
+              <input type="number" id="workout-duration" min="0">
+            </label>
+          </div>
+          <div id="exercise-rows"></div>
+          <button type="button" class="btn btn-ghost" id="add-exercise-row">+ Lisa harjutus</button>
+          <label>Märkmed
+            <textarea id="workout-notes" rows="2" placeholder="Kuidas läks?"></textarea>
+          </label>
+          <button type="submit" class="btn btn-primary">Salvesta treening</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Impordi treeningud</h2>
+        <p class="hint">Impordi varasemad treeningud JSON-failist (nt. genereeritud My Fitness raportist). Iga rida lisatakse treeninglukku; juba imporditud kirjeid topelt ei lisata.</p>
+        <input type="file" id="workout-import-input" accept="application/json">
+        <button class="btn btn-secondary" id="workout-import-btn">Impordi fail</button>
+        <p class="hint" id="workout-import-result"></p>
+      </div>
+      <div class="card">
+        <h2>Ajalugu</h2>
+        <div id="workout-history"></div>
+      </div>
+    </section>
+
+    <section id="tab-gymplans" class="tab-panel">
+      <header class="panel-header"><h1>Jõusaali kavad</h1></header>
+      <div class="card">
+        <label>Kuupäev <input type="date" id="gym-date"></label>
+        <div class="btn-row" id="gym-program-tabs"></div>
+      </div>
+      <div class="card">
+        <h2 id="gym-program-title"></h2>
+        <div id="gym-exercise-rows"></div>
+        <label>Märkmed <textarea id="gym-notes" rows="2" placeholder="Kuidas trenn läks?"></textarea></label>
+        <button class="btn btn-primary" id="gym-save-btn">Salvesta trenn</button>
+      </div>
+      <div class="card">
+        <h2>Progress harjutuse kaupa</h2>
+        <label>Harjutus
+          <select id="gym-progress-select"></select>
+        </label>
+        <div class="chart-wrap"><canvas id="chart-gym-progress"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Ajalugu</h2>
+        <div id="gym-history"></div>
+      </div>
+    </section>
+
+    <section id="tab-measurements" class="tab-panel">
+      <header class="panel-header"><h1>Kehamõõdud</h1></header>
+      <div class="card">
+        <h2>Uus mõõtmine</h2>
+        <form id="measurement-form" class="stacked-form">
+          <div class="form-row">
+            <label>Kuupäev <input type="date" id="m-date" required></label>
+            <label>Kaal (kg) <input type="number" step="0.1" id="m-weight"></label>
+            <label>Rasvaprotsent (%) <input type="number" step="0.1" id="m-bodyfat"></label>
+          </div>
+          <div class="form-row">
+            <label>Vööümbermõõt (cm) <input type="number" step="0.1" id="m-waist"></label>
+            <label>Puusaümbermõõt (cm) <input type="number" step="0.1" id="m-hips"></label>
+            <label>Rinnaümbermõõt (cm) <input type="number" step="0.1" id="m-chest"></label>
+          </div>
+          <div class="form-row">
+            <label>Reis (cm) <input type="number" step="0.1" id="m-thigh"></label>
+            <label>Käsivars (cm) <input type="number" step="0.1" id="m-arm"></label>
+          </div>
+          <button type="submit" class="btn btn-primary">Salvesta mõõtmine</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Kaalu trend</h2>
+        <div class="chart-wrap"><canvas id="chart-weight"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Kehamõõdud ajas</h2>
+        <label>Näita mõõtu
+          <select id="measurement-metric-select">
+            <option value="bodyFat">Rasvaprotsent (%)</option>
+            <option value="waist">Vööümbermõõt (cm)</option>
+            <option value="hips">Puusaümbermõõt (cm)</option>
+            <option value="chest">Rinnaümbermõõt (cm)</option>
+            <option value="thigh">Reis (cm)</option>
+            <option value="arm">Käsivars (cm)</option>
+          </select>
+        </label>
+        <div class="chart-wrap"><canvas id="chart-measurements"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Ajalugu</h2>
+        <div id="measurement-history"></div>
+      </div>
+    </section>
+
+    <section id="tab-cycle" class="tab-panel">
+      <header class="panel-header"><h1>Tsükli jälgimine</h1></header>
+      <div class="card">
+        <div id="cycle-status"></div>
+      </div>
+      <div class="card">
+        <h2>Märgi menstruatsiooni algus</h2>
+        <form id="cycle-form" class="stacked-form">
+          <div class="form-row">
+            <label>Kuupäev <input type="date" id="cycle-date" required></label>
+            <label>Tsükli pikkus (päevad) <input type="number" id="cycle-length" min="15" max="45"></label>
+          </div>
+          <button type="submit" class="btn btn-primary">Salvesta</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Faaside ajalugu</h2>
+        <div id="cycle-history"></div>
+      </div>
+    </section>
+
+    <section id="tab-water" class="tab-panel">
+      <header class="panel-header"><h1>Vee tarbimine</h1></header>
+      <div class="card water-card">
+        <div class="water-ring-wrap">
+          <canvas id="water-ring" width="180" height="180"></canvas>
+          <div class="water-ring-label" id="water-ring-label"></div>
+        </div>
+        <div class="water-buttons" id="water-buttons"></div>
+      </div>
+      <div class="card">
+        <h2>Viimased 7 päeva</h2>
+        <div class="chart-wrap"><canvas id="chart-water"></canvas></div>
+      </div>
+    </section>
+
+    <section id="tab-photos" class="tab-panel">
+      <header class="panel-header"><h1>Progressifotod</h1></header>
+      <div class="card">
+        <h2>Lisa foto</h2>
+        <input type="file" id="photo-input" accept="image/*">
+        <label>Märkus <input type="text" id="photo-note" placeholder="nt. Hommikul, tühja kõhuga"></label>
+        <button class="btn btn-primary" id="photo-add-btn">Lisa foto</button>
+        <p class="hint" id="photo-storage-hint"></p>
+      </div>
+      <div class="card">
+        <h2>Fotode ajalugu</h2>
+        <div id="photo-gallery" class="photo-gallery"></div>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab-panel">
+      <header class="panel-header"><h1>Seaded</h1></header>
+      <div class="card">
+        <h2>Profiil</h2>
+        <form id="profile-form" class="stacked-form">
+          <div class="form-row">
+            <label>Vanus <input type="number" id="p-age"></label>
+            <label>Pikkus (cm) <input type="number" id="p-height"></label>
+            <label>Aktiivsustase
+              <select id="p-activity">
+                <option value="low">Madal</option>
+                <option value="moderate">Mõõdukas</option>
+                <option value="high">Kõrge</option>
+              </select>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary">Salvesta profiil</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Makrotoitainete eesmärgid</h2>
+        <form id="macro-form" class="stacked-form">
+          <div class="form-row">
+            <label>Kalorid (kcal) <input type="number" id="mt-kcal"></label>
+            <label>Valk (g) <input type="number" id="mt-protein"></label>
+          </div>
+          <div class="form-row">
+            <label>Rasv (g) <input type="number" id="mt-fat"></label>
+            <label>Süsivesikud (g) <input type="number" id="mt-carbs"></label>
+          </div>
+          <button type="submit" class="btn btn-primary">Salvesta eesmärgid</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Vee eesmärk</h2>
+        <form id="water-target-form" class="stacked-form">
+          <label>Päevane eesmärk (ml) <input type="number" id="wt-target" step="50"></label>
+          <button type="submit" class="btn btn-primary">Salvesta</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Claude API (fotode analüüsiks)</h2>
+        <p class="hint">Sinu API võti salvestatakse ainult sinu brauseri localStorage'is ja saadetakse ainult otse Anthropic API-le foto analüüsimiseks. Võtme saad hankida aadressilt console.anthropic.com.</p>
+        <form id="apikey-form" class="stacked-form">
+          <label>Anthropic API võti <input type="password" id="anthropic-key" placeholder="sk-ant-..."></label>
+          <button type="submit" class="btn btn-primary">Salvesta võti</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Andmete haldus</h2>
+        <p class="hint">Kõik andmed hoitakse ainult sinu brauseris (localStorage). Ekspordi need aeg-ajalt varukoopiaks.</p>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="export-data-btn">Ekspordi andmed (JSON)</button>
+          <button class="btn btn-ghost danger" id="reset-data-btn">Lähtesta kõik andmed</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/storage.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/nutrition.js"></script>
+<script src="js/workouts.js"></script>
+<script src="js/gymplans.js"></script>
+<script src="js/measurements.js"></script>
+<script src="js/cycle.js"></script>
+<script src="js/water.js"></script>
+<script src="js/steps.js"></script>
+<script src="js/photos.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/weekly.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((e) => console.error('SW registreerimine ebaõnnestus', e));
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+// Kogu rakenduse andmepüsivus localStorage'is.
+const Storage = {
+  KEYS: {
+    PROFILE: 'fitness_profile',
+    FOOD_LOG: 'fitness_food_log',
+    WORKOUTS: 'fitness_workouts',
+    MEASUREMENTS: 'fitness_measurements',
+    CYCLE: 'fitness_cycle',
+    WATER: 'fitness_water',
+    STEPS: 'fitness_steps',
+    PHOTOS: 'fitness_photos',
+    WEEKLY: 'fitness_weekly_analysis',
+    GYM_SESSIONS: 'fitness_gym_sessions',
+  },
+
+  get(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === null) return fallback;
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error('Storage.get error', key, e);
+      return fallback;
+    }
+  },
+
+  set(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      console.error('Storage.set error', key, e);
+      if (e && e.name === 'QuotaExceededError') {
+        UI.toast('Salvestusruum on täis. Kustuta mõni vana foto, et jätkata.');
+      }
+      return false;
+    }
+  },
+
+  defaultProfile() {
+    return {
+      age: 35,
+      gender: 'female',
+      weight: 73.3,
+      height: 176,
+      activity: 'moderate',
+      bodyFat: 28.8,
+      cycleLength: 28,
+      macros: { kcal: 1972, protein: 147, fat: 55, carbs: 222 },
+      waterTarget: 2500,
+      anthropicApiKey: '',
+    };
+  },
+
+  getProfile() {
+    const stored = this.get(this.KEYS.PROFILE, null);
+    if (!stored) {
+      const def = this.defaultProfile();
+      this.set(this.KEYS.PROFILE, def);
+      return def;
+    }
+    // Täienda puuduvad väljad vaikeväärtustega (nt. rakenduse esimene korras avamine).
+    return Object.assign(this.defaultProfile(), stored);
+  },
+
+  saveProfile(profile) {
+    this.set(this.KEYS.PROFILE, profile);
+  },
+};
+
+const UI = {
+  toast(message, duration = 2600) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.remove('hidden');
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => el.classList.add('hidden'), duration);
+  },
+};
