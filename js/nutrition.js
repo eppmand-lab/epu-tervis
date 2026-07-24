@@ -1,6 +1,13 @@
 const Nutrition = {
   _lastSearchResults: [],
 
+  MEALS: [
+    { key: 'hommik', label: 'HOMMIKUSÖÖK' },
+    { key: 'lounasook', label: 'LÕUNASÖÖK' },
+    { key: 'ohtu', label: 'ÕHTUSÖÖK' },
+    { key: 'snakk', label: 'SNÄKK' },
+  ],
+
   getLog() {
     return Storage.get(Storage.KEYS.FOOD_LOG, {});
   },
@@ -33,6 +40,16 @@ const Nutrition = {
       acc.carbs += e.carbs || 0;
       return acc;
     }, { kcal: 0, protein: 0, fat: 0, carbs: 0 });
+  },
+
+  selectedDate() {
+    const input = document.getElementById('nutrition-date');
+    return (input && input.value) || DateUtils.todayISO();
+  },
+
+  selectedMeal() {
+    const select = document.getElementById('food-meal-select');
+    return (select && select.value) || 'hommik';
   },
 
   async searchOFF(term) {
@@ -93,13 +110,14 @@ const Nutrition = {
       id: Fmt.uid(),
       name: item.name,
       grams,
+      meal: this.selectedMeal(),
       kcal: NutriMath.scale(item.kcal100, grams),
       protein: NutriMath.scale(item.protein100, grams),
       fat: NutriMath.scale(item.fat100, grams),
       carbs: NutriMath.scale(item.carbs100, grams),
       time: new Date().toISOString(),
     };
-    this.addEntry(DateUtils.todayISO(), entry);
+    this.addEntry(this.selectedDate(), entry);
     document.getElementById('food-search-input').value = '';
     document.getElementById('food-search-results').innerHTML = '';
     this.renderAll();
@@ -135,13 +153,14 @@ const Nutrition = {
       if (grams <= 0) { UI.toast('Sisesta kogus grammides'); return; }
       const entry = {
         id: Fmt.uid(), name, grams,
+        meal: this.selectedMeal(),
         kcal: NutriMath.scale(kcal100, grams),
         protein: NutriMath.scale(protein100, grams),
         fat: NutriMath.scale(fat100, grams),
         carbs: NutriMath.scale(carbs100, grams),
         time: new Date().toISOString(),
       };
-      this.addEntry(DateUtils.todayISO(), entry);
+      this.addEntry(this.selectedDate(), entry);
       el.classList.add('hidden');
       el.innerHTML = '';
       document.getElementById('food-search-input').value = '';
@@ -153,11 +172,11 @@ const Nutrition = {
 
   renderMacroSummary() {
     const profile = Storage.getProfile();
-    const totals = this.dayTotals(DateUtils.todayISO());
+    const totals = this.dayTotals(this.selectedDate());
     const targets = profile.macros;
     const rows = [
-      { label: 'Kalorid', value: totals.kcal, target: targets.kcal, unit: 'kcal', color: 'var(--pink)' },
-      { label: 'Valk', value: totals.protein, target: targets.protein, unit: 'g', color: 'var(--chart-green)' },
+      { label: 'Kalorid', value: totals.kcal, target: targets.kcal, unit: 'kcal', color: 'var(--espresso)' },
+      { label: 'Valk', value: totals.protein, target: targets.protein, unit: 'g', color: 'var(--chart-red)' },
       { label: 'Rasv', value: totals.fat, target: targets.fat, unit: 'g', color: 'var(--chart-blue)' },
       { label: 'Süsivesikud', value: totals.carbs, target: targets.carbs, unit: 'g', color: 'var(--chart-amber)' },
     ];
@@ -175,22 +194,27 @@ const Nutrition = {
   },
 
   renderLog() {
-    const iso = DateUtils.todayISO();
-    const entries = this.getDayEntries(iso).slice().reverse();
+    const iso = this.selectedDate();
+    const entries = this.getDayEntries(iso);
     const el = document.getElementById('food-log-list');
     if (!entries.length) {
-      el.innerHTML = '<p class="hint">Täna pole veel midagi lisatud.</p>';
+      el.innerHTML = '<p class="hint">SEE PÄEV ON TÜHI. LISA MIDAGI.</p>';
       return;
     }
-    el.innerHTML = entries.map(e => `
-      <div class="food-log-item">
-        <div>
-          <div class="fli-main">${this._esc(e.name)}</div>
-          <div class="fli-sub">${Fmt.int(e.grams)}g · ${Fmt.int(e.kcal)} kcal · V${Fmt.round1(e.protein)} R${Fmt.round1(e.fat)} SV${Fmt.round1(e.carbs)}</div>
+    el.innerHTML = this.MEALS.map(meal => {
+      const mealEntries = entries.filter(e => (e.meal || 'hommik') === meal.key);
+      if (!mealEntries.length) return '';
+      const items = mealEntries.map(e => `
+        <div class="food-log-item">
+          <div>
+            <div class="fli-main">${this._esc(e.name)}</div>
+            <div class="fli-sub">${Fmt.int(e.grams)}g · ${Fmt.int(e.kcal)} kcal · V${Fmt.round1(e.protein)} R${Fmt.round1(e.fat)} SV${Fmt.round1(e.carbs)}</div>
+          </div>
+          <button class="fli-remove" data-id="${e.id}" title="Eemalda">✕</button>
         </div>
-        <button class="fli-remove" data-id="${e.id}" title="Eemalda">✕</button>
-      </div>
-    `).join('');
+      `).join('');
+      return `<div class="meal-group"><div class="meal-group-title">${meal.label}</div>${items}</div>`;
+    }).join('');
     el.querySelectorAll('.fli-remove').forEach(btn => {
       btn.addEventListener('click', () => {
         this.removeEntry(iso, btn.dataset.id);
@@ -211,6 +235,8 @@ const Nutrition = {
   },
 
   init() {
+    document.getElementById('nutrition-date').value = DateUtils.todayISO();
+    document.getElementById('nutrition-date').addEventListener('change', () => this.renderAll());
     document.getElementById('food-search-btn').addEventListener('click', () => this.runSearch());
     document.getElementById('food-search-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); this.runSearch(); }

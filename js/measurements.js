@@ -59,7 +59,7 @@ const Measurements = {
     const all = this.getAll().slice().reverse();
     const el = document.getElementById('measurement-history');
     if (!all.length) {
-      el.innerHTML = '<p class="hint">Mõõtmisi pole veel lisatud.</p>';
+      el.innerHTML = '<p class="hint">POLE VEEL MÕÕDETUD.</p>';
       return;
     }
     const fields = [
@@ -97,8 +97,8 @@ const Measurements = {
         datasets: [{
           label: 'Kaal (kg)',
           data: all.map(m => m.weight),
-          borderColor: ChartTheme.colors.green,
-          backgroundColor: ChartTheme.colors.green,
+          borderColor: ChartTheme.colors.red,
+          backgroundColor: ChartTheme.colors.red,
           pointRadius: 4,
           pointHoverRadius: 6,
           borderWidth: 2,

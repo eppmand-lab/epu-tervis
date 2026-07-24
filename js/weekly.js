@@ -160,14 +160,13 @@ const WeeklyAnalysis = {
     const record = this.latest();
     const profile = Storage.getProfile();
 
-    const manualBtn = `<button class="btn btn-secondary" id="weekly-generate-btn">Genereeri kokkuvõte nüüd</button>`;
-
     if (!record) {
       el.innerHTML = `
-        <div class="dash-tile wide">
-          <div class="dash-tile-label">Nädala kokkuvõte</div>
-          <p class="hint">Esimene automaatne kokkuvõte ilmub pühapäeval. Kui tahad kohe näha, kuidas see näeb välja, genereeri see praeguste andmete põhjal juba nüüd.</p>
-          ${manualBtn}
+        <div class="weekly-poster">
+          <div class="tile-label">NÄDALA RAPORT</div>
+          <div class="weekly-headline">POLE VEEL RAPORTIT.</div>
+          <div class="weekly-stats-plain">Logi midagi — või anna endale juba praegu aus versioon.</div>
+          <button class="weekly-btn" id="weekly-generate-btn">ANNA RAPORT →</button>
         </div>
       `;
       document.getElementById('weekly-generate-btn').addEventListener('click', () => this.handleManualGenerate());
@@ -175,31 +174,35 @@ const WeeklyAnalysis = {
     }
 
     const s = record.stats;
+    const noData = s.loggedFoodDays === 0 && s.workoutCount === 0;
+    const headline = noData ? 'POLE ANDMEID. POLE ILLUSIOONE.' : 'RAPORT ON VALMIS.';
+
     const statLines = [
-      `🍽️ Kalorid: keskmiselt ${s.avgKcal} kcal/päev (eesmärk ${profile.macros.kcal}) · logitud ${s.loggedFoodDays}/${s.days} päeval`,
-      `🏋️ Treening: ${s.workoutCount} treeningut, ${s.workoutDuration} min kokku`,
-      `💧 Vesi: keskmiselt ${s.avgWater} ml/päev`,
-      `👟 Sammud: keskmiselt ${s.avgSteps}/päev (logitud ${s.loggedStepDays}/${s.days} päeval)`,
+      `KALORID — ${s.avgKcal} / ${profile.macros.kcal} KCAL KESKMISELT · LOGITUD ${s.loggedFoodDays}/${s.days} PÄEVAL`,
+      `TRENN — ${s.workoutCount}x, ${s.workoutDuration} MIN KOKKU`,
+      `VESI — ${s.avgWater} ML/PÄEV KESKMISELT`,
+      `SAMMUD — ${s.avgSteps}/PÄEV · LOGITUD ${s.loggedStepDays}/${s.days} PÄEVAL`,
     ];
     if (s.weightDelta !== null) {
-      statLines.push(`⚖️ Kaal: ${s.startWeight}kg → ${s.endWeight}kg (${s.weightDelta > 0 ? '+' : ''}${s.weightDelta}kg)`);
+      statLines.push(`KAAL — ${s.startWeight}KG → ${s.endWeight}KG (${s.weightDelta > 0 ? '+' : ''}${s.weightDelta}KG)`);
     }
 
     let aiBlock = '';
     if (record.aiSummary) {
-      aiBlock = `<div class="photo-tile-analysis weekly-ai">${this._esc(record.aiSummary)}</div>`;
+      aiBlock = `<div class="weekly-ai-plain">${this._esc(record.aiSummary)}</div>`;
     } else if (record.aiError) {
-      aiBlock = `<p class="hint weekly-ai">AI kokkuvõtet ei õnnestunud saada (${this._esc(record.aiError)}).</p>`;
+      aiBlock = `<div class="weekly-ai-plain">AI kokkuvõtet ei õnnestunud saada (${this._esc(record.aiError)}).</div>`;
     } else if (!profile.anthropicApiKey) {
-      aiBlock = `<p class="hint weekly-ai">Lisa Anthropic API võti Seaded lehel, et saada ka AI-genereeritud kommentaar.</p>`;
+      aiBlock = `<div class="weekly-ai-plain">Lisa Anthropic API võti Seaded lehel, et saada ka AI-kommentaar.</div>`;
     }
 
     el.innerHTML = `
-      <div class="dash-tile wide">
-        <div class="dash-tile-label">Nädala kokkuvõte · ${DateUtils.formatEt(record.start)} - ${DateUtils.formatEt(record.end)}</div>
-        <div class="weekly-stats">${statLines.join('<br>')}</div>
+      <div class="weekly-poster">
+        <div class="tile-label">NÄDALA RAPORT · ${DateUtils.formatEt(record.start).toUpperCase()} – ${DateUtils.formatEt(record.end).toUpperCase()}</div>
+        <div class="weekly-headline">${headline}</div>
+        <div class="weekly-stats-plain">${statLines.join('<br>')}</div>
         ${aiBlock}
-        <div class="weekly-actions">${manualBtn}</div>
+        <button class="weekly-btn" id="weekly-generate-btn">UUENDA RAPORT →</button>
       </div>
     `;
     document.getElementById('weekly-generate-btn').addEventListener('click', () => this.handleManualGenerate());

@@ -180,7 +180,7 @@ const GymPlans = {
     const sessions = this.getSessions().slice().sort((a, b) => b.date.localeCompare(a.date));
     const el = document.getElementById('gym-history');
     if (!sessions.length) {
-      el.innerHTML = '<p class="hint">Trenne pole veel logitud.</p>';
+      el.innerHTML = '<p class="hint">NULL LOGI. AEG MUUTA SEDA.</p>';
       return;
     }
     el.innerHTML = sessions.map(s => `

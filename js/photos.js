@@ -154,7 +154,7 @@ const Photos = {
     const all = this.getAll().slice().reverse();
     const el = document.getElementById('photo-gallery');
     if (!all.length) {
-      el.innerHTML = '<p class="hint">Fotosid pole veel lisatud.</p>';
+      el.innerHTML = '<p class="hint">POLE ÜHTEGI FOTOT. AEG ALUSTADA.</p>';
       return;
     }
     el.innerHTML = all.map(p => `

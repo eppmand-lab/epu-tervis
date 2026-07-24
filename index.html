@@ -3,15 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Epu tervis</title>
+<title>EPP 3.5</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8A4A4">
+<meta name="theme-color" content="#A91D3A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Epu tervis">
+<meta name="apple-mobile-web-app-title" content="EPP 3.5">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
@@ -19,36 +22,76 @@
 
 <div class="app-shell">
 
+  <div class="brandbar">
+    <span class="brand-mark">EPP 3.5</span>
+  </div>
   <nav class="tabbar" id="tabbar">
-    <button class="tab-btn active" data-tab="dashboard">🏠 <span>Ülevaade</span></button>
-    <button class="tab-btn" data-tab="nutrition">🍽️ <span>Toitumine</span></button>
-    <button class="tab-btn" data-tab="workouts">🏋️ <span>Treening</span></button>
-    <button class="tab-btn" data-tab="gymplans">💪 <span>Jõusaali kavad</span></button>
-    <button class="tab-btn" data-tab="measurements">📏 <span>Mõõdud</span></button>
-    <button class="tab-btn" data-tab="cycle">🌸 <span>Tsükkel</span></button>
-    <button class="tab-btn" data-tab="water">💧 <span>Vesi</span></button>
-    <button class="tab-btn" data-tab="photos">📷 <span>Fotod</span></button>
-    <button class="tab-btn" data-tab="settings">⚙️ <span>Seaded</span></button>
+    <button class="tab-btn active" data-tab="dashboard">TÄNA</button>
+    <button class="tab-btn" data-tab="nutrition">KÜTUS</button>
+    <button class="tab-btn" data-tab="workouts">TRENN</button>
+    <button class="tab-btn" data-tab="gymplans">KAVAD</button>
+    <button class="tab-btn" data-tab="measurements">KEHA</button>
+    <button class="tab-btn" data-tab="cycle">TSÜKKEL</button>
+    <button class="tab-btn" data-tab="water">VESI</button>
+    <button class="tab-btn" data-tab="photos">FOTOD</button>
+    <button class="tab-btn" data-tab="settings">SEADED</button>
   </nav>
 
   <main class="content">
 
     <section id="tab-dashboard" class="tab-panel active">
-      <header class="panel-header">
-        <h1 id="dashboard-greeting">Tere!</h1>
-        <p class="muted" id="dashboard-date"></p>
-      </header>
-      <div class="grid dashboard-grid" id="dashboard-cards"></div>
+      <div class="date-row">
+        <span id="dashboard-date"></span>
+      </div>
+
+      <div class="hero-row">
+        <div class="hero-energy">
+          <div class="tile-label">TÄNANE KÜTUS</div>
+          <div class="hero-number" id="hero-kcal-value">0</div>
+          <div class="hero-sub" id="hero-kcal-target">/ 0 KCAL</div>
+          <div class="hero-bar-track"><div class="hero-bar-fill" id="hero-kcal-fill"></div></div>
+        </div>
+        <div class="hero-week">
+          <div class="tile-label">NÄDAL <span id="hero-week-num"></span></div>
+          <div class="chart-wrap hero-spark-wrap"><canvas id="chart-week-spark"></canvas></div>
+        </div>
+      </div>
+
+      <div class="secondary-grid" id="dashboard-secondary"></div>
+
+      <div class="cycle-strip" id="steps-backfill-strip">
+        <span>SAMMUD TEISTEL PÄEVADEL?</span>
+        <a href="#" class="cycle-strip-link" id="steps-backfill-toggle">LISA →</a>
+      </div>
+      <div class="card hidden" id="steps-backfill-form">
+        <div class="form-row">
+          <label>Kuupäev <input type="date" id="steps-backfill-date"></label>
+          <label>Sammud <input type="number" id="steps-backfill-value" placeholder="0"></label>
+        </div>
+        <button class="btn btn-secondary" id="steps-backfill-save">SALVESTA</button>
+      </div>
+
+      <div class="cycle-strip" id="cycle-strip"></div>
+
       <div id="weekly-analysis-card"></div>
     </section>
 
     <section id="tab-nutrition" class="tab-panel">
-      <header class="panel-header"><h1>Toitumispäevik</h1></header>
+      <header class="panel-header"><h1>TOITUMISPÄEVIK</h1></header>
       <div class="card">
+        <label>Kuupäev <input type="date" id="nutrition-date"></label>
         <div class="macro-summary" id="macro-summary"></div>
       </div>
       <div class="card">
         <h2>Lisa toit</h2>
+        <label>Söögikord
+          <select id="food-meal-select">
+            <option value="hommik">Hommikusöök</option>
+            <option value="lounasook">Lõunasöök</option>
+            <option value="ohtu">Õhtusöök</option>
+            <option value="snakk">Snäkk</option>
+          </select>
+        </label>
         <div class="search-row">
           <input type="text" id="food-search-input" placeholder="Otsi toitu (nt. kaerahelbed)...">
           <button class="btn btn-secondary" id="food-search-btn">Otsi</button>
@@ -57,13 +100,13 @@
         <div id="manual-food-form" class="manual-food-form hidden"></div>
       </div>
       <div class="card">
-        <h2>Tänane päevik</h2>
+        <h2>Päevik</h2>
         <div id="food-log-list"></div>
       </div>
     </section>
 
     <section id="tab-workouts" class="tab-panel">
-      <header class="panel-header"><h1>Treeninglogi</h1></header>
+      <header class="panel-header"><h1>TREENINGLOGI</h1></header>
       <div class="card">
         <h2>Uus treening</h2>
         <form id="workout-form" class="stacked-form">
@@ -72,7 +115,17 @@
               <input type="date" id="workout-date" required>
             </label>
             <label>Treeningu tüüp
-              <input type="text" id="workout-type" placeholder="nt. Jõusaal - ülakeha" required>
+              <select id="workout-type-select">
+                <option value="Jooks">Jooks</option>
+                <option value="Jalutus">Jalutus</option>
+                <option value="Jõusaal">Jõusaal</option>
+                <option value="Pilates">Pilates</option>
+                <option value="BOXBOX">BOXBOX</option>
+                <option value="muu">Muu...</option>
+              </select>
+            </label>
+            <label id="workout-type-custom-wrap" class="hidden">Täpsusta
+              <input type="text" id="workout-type-custom" placeholder="nt. Jõusaal - ülakeha">
             </label>
             <label>Kestus (min)
               <input type="number" id="workout-duration" min="0">

@@ -52,7 +52,7 @@ const Water = {
         labels: ['Joodud', 'Puudu'],
         datasets: [{
           data: [Math.min(amount, target), Math.max(target - amount, 0)],
-          backgroundColor: [ChartTheme.colors.green, '#EAE1DA'],
+          backgroundColor: [ChartTheme.colors.red, '#DED4C4'],
           borderWidth: 0,
         }],
       },
@@ -85,7 +85,7 @@ const Water = {
             type: 'line',
             label: 'Eesmärk',
             data: days.map(() => target),
-            borderColor: ChartTheme.colors.pink,
+            borderColor: ChartTheme.colors.espresso,
             borderDash: [6, 4],
             borderWidth: 2,
             pointRadius: 0,

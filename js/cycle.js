@@ -1,9 +1,9 @@
 const Cycle = {
   PHASES: {
-    menstrual: { label: 'Menstruatsioon', color: '#D6798A' },
-    follicular: { label: 'Follikulaarne faas', color: '#8BAF8A' },
-    ovulation: { label: 'Ovulatsioon', color: '#D68A1F' },
-    luteal: { label: 'Luteaalne faas', color: '#3E7CB1' },
+    menstrual: { label: 'Menstruatsioon', color: '#A91D3A' },
+    follicular: { label: 'Follikulaarne faas', color: '#3573B0' },
+    ovulation: { label: 'Ovulatsioon', color: '#C79433' },
+    luteal: { label: 'Luteaalne faas', color: '#A9A29A' },
   },
 
   ADVICE: {
@@ -86,7 +86,7 @@ const Cycle = {
     const el = document.getElementById('cycle-status');
     const status = this.computeStatus(DateUtils.todayISO());
     if (!status) {
-      el.innerHTML = '<p class="hint">Lisa menstruatsiooni alguskuupäev, et näha oma tsükli faasi ja soovitusi.</p>';
+      el.innerHTML = '<p class="hint">POLE ANDMEID. LISA ALGUSKUUPÄEV, SIIS SAAD FAASI JA SOOVITUSED.</p>';
       return;
     }
     const phaseInfo = this.PHASES[status.phase];
@@ -110,7 +110,7 @@ const Cycle = {
     const data = this.getData();
     const el = document.getElementById('cycle-history');
     if (!data.periodStarts.length) {
-      el.innerHTML = '<p class="hint">Ajalugu puudub.</p>';
+      el.innerHTML = '<p class="hint">AJALUGU TÜHI.</p>';
       return;
     }
     const sorted = data.periodStarts.slice().sort().reverse();

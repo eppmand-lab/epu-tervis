@@ -53,10 +53,24 @@ const Workouts = {
     return exercises;
   },
 
+  getSelectedType() {
+    const select = document.getElementById('workout-type-select');
+    if (select.value === 'muu') {
+      return document.getElementById('workout-type-custom').value.trim();
+    }
+    return select.value;
+  },
+
+  handleTypeSelectChange() {
+    const select = document.getElementById('workout-type-select');
+    const wrap = document.getElementById('workout-type-custom-wrap');
+    wrap.classList.toggle('hidden', select.value !== 'muu');
+  },
+
   handleSubmit(e) {
     e.preventDefault();
     const date = document.getElementById('workout-date').value || DateUtils.todayISO();
-    const type = document.getElementById('workout-type').value.trim();
+    const type = this.getSelectedType();
     const duration = parseFloat(document.getElementById('workout-duration').value) || null;
     const notes = document.getElementById('workout-notes').value.trim();
     const exercises = this.collectExercises();
@@ -65,6 +79,7 @@ const Workouts = {
     document.getElementById('workout-form').reset();
     document.getElementById('exercise-rows').innerHTML = '';
     document.getElementById('workout-date').value = DateUtils.todayISO();
+    document.getElementById('workout-type-custom-wrap').classList.add('hidden');
     this.renderHistory();
     UI.toast('Treening salvestatud');
   },
@@ -73,7 +88,7 @@ const Workouts = {
     const all = this.getAll().slice().sort((a, b) => b.date.localeCompare(a.date) || 0);
     const el = document.getElementById('workout-history');
     if (!all.length) {
-      el.innerHTML = '<p class="hint">Treeninguid pole veel lisatud.</p>';
+      el.innerHTML = '<p class="hint">NULL TRENNI. VEEL.</p>';
       return;
     }
     el.innerHTML = all.map(w => {
@@ -155,6 +170,7 @@ const Workouts = {
     document.getElementById('workout-form').addEventListener('submit', (e) => this.handleSubmit(e));
     document.getElementById('add-exercise-row').addEventListener('click', () => this.addExerciseRow());
     document.getElementById('workout-import-btn').addEventListener('click', () => this.handleImport());
+    document.getElementById('workout-type-select').addEventListener('change', () => this.handleTypeSelectChange());
     this.addExerciseRow();
     this.renderHistory();
   },

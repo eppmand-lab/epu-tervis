@@ -2,14 +2,14 @@
 // (vt vestlus: värvid läbisid CVD/kontrasti/heleduse kontrollid dataviz skill'i validaatoriga).
 const ChartTheme = {
   colors: {
-    green: '#3F8F5C',
-    blue: '#3E7CB1',
-    amber: '#D68A1F',
-    pink: '#D6798A',
+    red: '#A91D3A',
+    blue: '#3573B0',
+    amber: '#C79433',
+    espresso: '#2C211C',
   },
-  ink: '#3A3230',
-  inkMuted: '#7A7068',
-  grid: '#EAE1DA',
+  ink: '#2C211C',
+  inkMuted: '#78695E',
+  grid: '#DED4C4',
   surface: '#FFFFFF',
 
   base(type, extra) {
@@ -26,11 +26,13 @@ const ChartTheme = {
           },
           tooltip: {
             backgroundColor: this.ink,
-            titleColor: '#fff',
-            bodyColor: '#fff',
+            titleColor: '#F5F0E5',
+            bodyColor: '#F5F0E5',
             padding: 10,
-            cornerRadius: 8,
+            cornerRadius: 2,
             displayColors: true,
+            titleFont: { family: 'Barlow Condensed', weight: '700' },
+            bodyFont: { family: 'Inter' },
           },
         },
         scales: {

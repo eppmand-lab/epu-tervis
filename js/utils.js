@@ -34,6 +34,11 @@ const DateUtils = {
     const d = new Date(iso + 'T00:00:00');
     return names[d.getDay()];
   },
+  weekdayFullEt(iso) {
+    const names = ['PÜHAPÄEV', 'ESMASPÄEV', 'TEISIPÄEV', 'KOLMAPÄEV', 'NELJAPÄEV', 'REEDE', 'LAUPÄEV'];
+    const d = new Date(iso + 'T00:00:00');
+    return names[d.getDay()];
+  },
   isSunday(iso) {
     return new Date(iso + 'T00:00:00').getDay() === 0;
   },
@@ -44,6 +49,13 @@ const DateUtils = {
     const start = this.addDays(iso, -daysSinceMonday);
     const end = this.addDays(start, 6);
     return { start, end };
+  },
+  // ISO 8601 nädalanumber
+  weekNumber(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   },
   rangeDays(startIso, endIso) {
     const days = [];
