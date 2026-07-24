@@ -34,6 +34,7 @@
     <button class="tab-btn" data-tab="cycle">TSÜKKEL</button>
     <button class="tab-btn" data-tab="water">VESI</button>
     <button class="tab-btn" data-tab="photos">FOTOD</button>
+    <button class="tab-btn" data-tab="finance">RAHA</button>
     <button class="tab-btn" data-tab="settings">SEADED</button>
   </nav>
 
@@ -72,6 +73,8 @@
       </div>
 
       <div class="cycle-strip" id="cycle-strip"></div>
+
+      <div class="cycle-strip money-strip" id="money-strip"></div>
 
       <div id="weekly-analysis-card"></div>
     </section>
@@ -274,6 +277,132 @@
       </div>
     </section>
 
+    <section id="tab-finance" class="tab-panel">
+      <header class="panel-header"><h1>Finantstervis</h1></header>
+
+      <div class="weekly-poster" id="finance-sts-hero"></div>
+
+      <div class="secondary-grid" id="finance-secondary"></div>
+
+      <div class="card">
+        <h2>Lähenevad maksed</h2>
+        <div id="finance-upcoming"></div>
+      </div>
+
+      <div class="card">
+        <h2>Eesmärgid</h2>
+        <div id="finance-goals-display"></div>
+      </div>
+
+      <div class="weekly-poster" id="finance-month-summary"></div>
+
+      <div class="card">
+        <h2>Kuu rahaplaan</h2>
+        <form id="finance-plan-form" class="stacked-form">
+          <div class="form-row">
+            <label>Kuu <input type="month" id="fp-month"></label>
+            <label>Netosissetulek (€) <input type="number" id="fp-income" step="1"></label>
+            <label>Palgapäev (kuupäev, 31=kuu viimane päev) <input type="number" id="fp-payday" min="1" max="31"></label>
+          </div>
+          <div class="form-row">
+            <label>Püsikulud (€) <input type="number" id="fp-fixed" step="1"></label>
+            <label>Investeeringud (€) <input type="number" id="fp-invest" step="1"></label>
+          </div>
+          <div class="form-row">
+            <label>Erakorralised kulud (€) <input type="number" id="fp-extra" step="1"></label>
+            <label>Minimaalne puhver (€) <input type="number" id="fp-buffer" step="1"></label>
+          </div>
+          <button type="submit" class="btn btn-primary">Salvesta kuuplaan</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Lisa kulu</h2>
+        <form id="finance-tx-form" class="stacked-form">
+          <div class="form-row">
+            <label>Kuupäev <input type="date" id="tx-date"></label>
+            <label>Summa (€) <input type="number" id="tx-amount" step="0.01" required></label>
+            <label>Kategooria
+              <select id="tx-category">
+                <option>Toit</option>
+                <option>Transport</option>
+                <option>Kodu</option>
+                <option>Riided</option>
+                <option>Tervis</option>
+                <option>Trenn</option>
+                <option>Meelelahutus</option>
+                <option>Reisimine</option>
+                <option>Tellimused</option>
+                <option>Muu</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Eluvaldkond (valikuline)
+              <select id="tx-domain">
+                <option value="">—</option>
+                <option>Baas</option>
+                <option>Tuleviku-Epp</option>
+                <option>Heaolu</option>
+                <option>Elamused</option>
+                <option>Stiil</option>
+                <option>Mugavus</option>
+              </select>
+            </label>
+            <label>Vajalikkus (valikuline)
+              <select id="tx-necessity">
+                <option value="">—</option>
+                <option value="vajalik">Vajalik</option>
+                <option value="mugavus">Mugavus</option>
+                <option value="emotsioon">Emotsioonost</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Märkus <input type="text" id="tx-note" placeholder="valikuline"></label>
+            <label>Jagatud summa (€, valikuline) <input type="number" id="tx-shared" step="0.01" placeholder="0"></label>
+          </div>
+          <div class="form-row">
+            <label class="finance-checkbox"><input type="checkbox" id="tx-refund"> Tagastus/cashback</label>
+            <label class="finance-checkbox"><input type="checkbox" id="tx-transfer"> Ülekanne (ei loeta kuluks)</label>
+          </div>
+          <button type="submit" class="btn btn-primary">Salvesta kulu</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Tehingute ajalugu</h2>
+        <div id="finance-tx-history"></div>
+        <button class="btn btn-ghost" id="finance-csv-btn">Ekspordi CSV</button>
+      </div>
+
+      <div class="card">
+        <h2>Püsikulud</h2>
+        <form id="finance-recurring-form" class="stacked-form">
+          <div class="form-row">
+            <label>Nimi <input type="text" id="rec-name" placeholder="nt. Üür"></label>
+            <label>Summa (€) <input type="number" id="rec-amount" step="1"></label>
+            <label>Kuupäev kuus (31=kuu viimane päev) <input type="number" id="rec-day" min="1" max="31"></label>
+          </div>
+          <button type="submit" class="btn btn-secondary">Lisa püsikulu</button>
+        </form>
+        <div id="finance-recurring-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Eesmärgi lisamine</h2>
+        <form id="finance-goal-form" class="stacked-form">
+          <div class="form-row">
+            <label>Nimi <input type="text" id="goal-name" placeholder="nt. Reisifond"></label>
+            <label>Sihtsumma (€) <input type="number" id="goal-target" step="1"></label>
+            <label>Sihtkuupäev <input type="date" id="goal-date"></label>
+          </div>
+          <label>Praegu kogutud (€) <input type="number" id="goal-current" step="1" value="0"></label>
+          <button type="submit" class="btn btn-secondary">Lisa eesmärk</button>
+        </form>
+      </div>
+    </section>
+
     <section id="tab-settings" class="tab-panel">
       <header class="panel-header"><h1>Seaded</h1></header>
       <div class="card">
@@ -348,6 +477,7 @@
 <script src="js/water.js"></script>
 <script src="js/steps.js"></script>
 <script src="js/photos.js"></script>
+<script src="js/finance.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/weekly.js"></script>
 <script src="js/dashboard.js"></script>

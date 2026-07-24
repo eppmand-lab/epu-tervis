@@ -66,6 +66,9 @@ body {
 }
 .tabbar::-webkit-scrollbar { display: none; }
 
+.brandbar.theme-body, .tabbar.theme-body { background: var(--butter); transition: background .15s ease; }
+.brandbar.theme-money, .tabbar.theme-money { background: var(--powder-blue); transition: background .15s ease; }
+
 .tab-btn {
   flex: 0 0 auto;
   font-family: var(--font-label);
@@ -244,6 +247,11 @@ body {
   text-decoration: none;
   font-weight: 700;
 }
+.money-strip {
+  background: var(--powder-blue);
+  border-color: var(--powder-blue);
+}
+.money-strip .cycle-strip-link { color: var(--espresso); }
 
 /* --- Weekly poster --- */
 .weekly-poster {
@@ -443,6 +451,30 @@ input:focus, select:focus, textarea:focus {
 .photo-tile-analysis { font-size: 12px; background: var(--porcelain); border: 1px solid var(--border); padding: 8px; margin-top: 6px; white-space: pre-wrap; }
 .photo-tile button { font-size: 11px; padding: 6px 8px; }
 .photo-tile-actions { display: flex; gap: 6px; }
+
+/* --- Finants --- */
+.finance-checkbox {
+  flex-direction: row; align-items: center; gap: 6px;
+  text-transform: none; font-family: var(--font-body); font-size: 13px; color: var(--ink);
+}
+.finance-checkbox input { width: auto; }
+.finance-timeline { display: flex; overflow-x: auto; gap: 0; padding: 10px 0; }
+.finance-timeline-day {
+  flex: 0 0 60px; text-align: center; font-size: 11px; color: var(--ink-muted);
+  border-top: 2px solid var(--border); padding-top: 10px; position: relative;
+}
+.finance-timeline-day.has-payment { border-top-color: var(--oxblood); }
+.finance-timeline-day .ftd-dot {
+  position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 10px; border-radius: 50%; background: var(--oxblood);
+}
+.finance-timeline-day .ftd-label { margin-top: 4px; font-weight: 600; color: var(--ink); }
+.finance-breakdown { font-size: 13px; line-height: 1.9; margin-top: 10px; }
+.finance-breakdown-toggle {
+  background: none; border: none; color: var(--porcelain); text-decoration: underline;
+  font-family: var(--font-label); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase;
+  cursor: pointer; padding: 0; margin-top: 8px;
+}
 
 /* --- Toast --- */
 .toast {

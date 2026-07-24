@@ -143,12 +143,23 @@ const Dashboard = {
     if (link) link.addEventListener('click', (e) => { e.preventDefault(); App.showTab('cycle'); });
   },
 
+  renderMoneyStrip() {
+    const el = document.getElementById('money-strip');
+    const sts = Finance.computeSafeToSpend();
+    el.innerHTML = `
+      <span>TÄNANE KULUTUSEELARVE — ${Finance.fmt(sts.today)} €</span>
+      <a href="#" class="cycle-strip-link" data-nav="finance">RAHA →</a>
+    `;
+    el.querySelector('[data-nav]').addEventListener('click', (e) => { e.preventDefault(); App.showTab('finance'); });
+  },
+
   render() {
     this.renderDateRow();
     this.renderHeroEnergy();
     this.renderHeroWeek();
     this.renderSecondaryGrid();
     this.renderCycleStrip();
+    this.renderMoneyStrip();
 
     WeeklyAnalysis.renderCard();
     WeeklyAnalysis.maybeAutoGenerate().then(() => WeeklyAnalysis.renderCard());

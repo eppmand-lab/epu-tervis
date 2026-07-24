@@ -11,6 +11,11 @@ const Storage = {
     PHOTOS: 'fitness_photos',
     WEEKLY: 'fitness_weekly_analysis',
     GYM_SESSIONS: 'fitness_gym_sessions',
+    FINANCE_PLANS: 'fitness_finance_plans',
+    FINANCE_TRANSACTIONS: 'fitness_finance_transactions',
+    FINANCE_RECURRING: 'fitness_finance_recurring',
+    FINANCE_GOALS: 'fitness_finance_goals',
+    FINANCE_MONTH_SUMMARY: 'fitness_finance_month_summary',
   },
 
   get(key, fallback) {
