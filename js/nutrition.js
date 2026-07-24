@@ -177,8 +177,8 @@ const Nutrition = {
     const rows = [
       { label: 'Kalorid', value: totals.kcal, target: targets.kcal, unit: 'kcal', color: 'var(--espresso)' },
       { label: 'Valk', value: totals.protein, target: targets.protein, unit: 'g', color: 'var(--chart-red)' },
-      { label: 'Rasv', value: totals.fat, target: targets.fat, unit: 'g', color: 'var(--chart-blue)' },
-      { label: 'Süsivesikud', value: totals.carbs, target: targets.carbs, unit: 'g', color: 'var(--chart-amber)' },
+      { label: 'Rasv', value: totals.fat, target: targets.fat, unit: 'g', color: 'var(--powder-blue)' },
+      { label: 'Süsivesikud', value: totals.carbs, target: targets.carbs, unit: 'g', color: 'var(--butter)' },
     ];
     const el = document.getElementById('macro-summary');
     el.innerHTML = rows.map(r => {

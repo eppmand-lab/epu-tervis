@@ -12,10 +12,7 @@
   --border: #DED4C4;
   --border-strong: var(--espresso);
 
-  /* validated chart-mark tier — deepened from the surface tints so they pass CVD/contrast checks as data marks */
   --chart-red: #A91D3A;
-  --chart-amber: #C79433;
-  --chart-blue: #3573B0;
 
   --font-display: 'Playfair Display', Georgia, serif;
   --font-label: 'Barlow Condensed', 'Arial Narrow', sans-serif;
@@ -218,8 +215,8 @@ body {
   margin-top: 6px;
 }
 .sec-tile-sub { font-size: 12px; opacity: 0.75; margin-top: 2px; }
-.sec-blue { background: var(--chart-blue); color: var(--porcelain); border-color: var(--chart-blue); }
-.sec-butter { background: var(--chart-amber); color: var(--porcelain); border-color: var(--chart-amber); }
+.sec-blue { background: var(--powder-blue); color: var(--espresso); border-color: var(--powder-blue); }
+.sec-butter { background: var(--butter); color: var(--espresso); border-color: var(--butter); }
 .sec-oxblood { background: var(--oxblood); color: var(--porcelain); border-color: var(--oxblood); }
 .sec-plain { background: var(--porcelain); color: var(--espresso); border-color: var(--border-strong); }
 

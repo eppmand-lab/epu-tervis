@@ -3,8 +3,8 @@
 const ChartTheme = {
   colors: {
     red: '#A91D3A',
-    blue: '#3573B0',
-    amber: '#C79433',
+    blue: '#BFD8E6',
+    amber: '#F2C96D',
     espresso: '#2C211C',
   },
   ink: '#2C211C',
