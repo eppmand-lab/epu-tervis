@@ -97,8 +97,8 @@ const Measurements = {
         datasets: [{
           label: 'Kaal (kg)',
           data: all.map(m => m.weight),
-          borderColor: ChartTheme.colors.red,
-          backgroundColor: ChartTheme.colors.red,
+          borderColor: ChartTheme.colors.amber,
+          backgroundColor: ChartTheme.colors.amber,
           pointRadius: 4,
           pointHoverRadius: 6,
           borderWidth: 2,
@@ -128,8 +128,8 @@ const Measurements = {
         datasets: [{
           label: this.metricLabels[metric],
           data: all.map(m => m[metric]),
-          borderColor: ChartTheme.colors.blue,
-          backgroundColor: ChartTheme.colors.blue,
+          borderColor: ChartTheme.colors.amber,
+          backgroundColor: ChartTheme.colors.amber,
           pointRadius: 4,
           pointHoverRadius: 6,
           borderWidth: 2,

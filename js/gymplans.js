@@ -163,8 +163,8 @@ const GymPlans = {
         datasets: [{
           label: exerciseName,
           data: points.map(p => p.weight),
-          borderColor: ChartTheme.colors.blue,
-          backgroundColor: ChartTheme.colors.blue,
+          borderColor: ChartTheme.colors.amber,
+          backgroundColor: ChartTheme.colors.amber,
           pointRadius: 4,
           pointHoverRadius: 6,
           borderWidth: 2,

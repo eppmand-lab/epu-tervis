@@ -52,7 +52,7 @@ const Water = {
         labels: ['Joodud', 'Puudu'],
         datasets: [{
           data: [Math.min(amount, target), Math.max(target - amount, 0)],
-          backgroundColor: [ChartTheme.colors.red, '#DED4C4'],
+          backgroundColor: [ChartTheme.colors.blue, '#DED4C4'],
           borderWidth: 0,
         }],
       },
