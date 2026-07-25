@@ -1,5 +1,7 @@
 const Workouts = {
   exerciseRowCount: 0,
+  restTimerId: null,
+  restSeconds: 90,
 
   getAll() {
     return Storage.get(Storage.KEYS.WORKOUTS, []);
@@ -59,6 +61,58 @@ const Workouts = {
       return document.getElementById('workout-type-custom').value.trim();
     }
     return select.value;
+  },
+
+  prefillLastWorkout() {
+    const latest = this.getAll().slice().sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!latest) {
+      UI.toast('Varasem treening puudub');
+      return;
+    }
+    const typeSelect = document.getElementById('workout-type-select');
+    const known = [...typeSelect.options].some(option => option.value === latest.type);
+    typeSelect.value = known ? latest.type : 'muu';
+    document.getElementById('workout-type-custom-wrap').classList.toggle('hidden', known);
+    document.getElementById('workout-type-custom').value = known ? '' : latest.type;
+    document.getElementById('workout-duration').value = latest.duration || '';
+    document.getElementById('exercise-rows').innerHTML = '';
+    (latest.exercises || []).forEach(exercise => this.addExerciseRow(exercise));
+    if (!(latest.exercises || []).length) this.addExerciseRow();
+    document.getElementById('workout-notes').value = '';
+    UI.toast('Viimane treening on eeltäidetud');
+  },
+
+  formatTimer(seconds) {
+    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  },
+
+  toggleRestTimer() {
+    const wrap = document.getElementById('rest-timer');
+    const value = document.getElementById('rest-timer-value');
+    const button = document.getElementById('rest-timer-toggle');
+    if (this.restTimerId) {
+      clearInterval(this.restTimerId);
+      this.restTimerId = null;
+      this.restSeconds = 90;
+      value.textContent = '01:30';
+      button.textContent = 'Puhkepaus 01:30';
+      wrap.classList.add('hidden');
+      return;
+    }
+    wrap.classList.remove('hidden');
+    button.textContent = 'Peata taimer';
+    value.textContent = this.formatTimer(this.restSeconds);
+    this.restTimerId = setInterval(() => {
+      this.restSeconds--;
+      value.textContent = this.formatTimer(Math.max(0, this.restSeconds));
+      if (this.restSeconds <= 0) {
+        clearInterval(this.restTimerId);
+        this.restTimerId = null;
+        this.restSeconds = 90;
+        button.textContent = 'Puhkepaus 01:30';
+        UI.toast('Puhkepaus läbi — järgmine seeria');
+      }
+    }, 1000);
   },
 
   handleTypeSelectChange() {
@@ -171,6 +225,8 @@ const Workouts = {
     document.getElementById('add-exercise-row').addEventListener('click', () => this.addExerciseRow());
     document.getElementById('workout-import-btn').addEventListener('click', () => this.handleImport());
     document.getElementById('workout-type-select').addEventListener('change', () => this.handleTypeSelectChange());
+    document.getElementById('copy-last-workout').addEventListener('click', () => this.prefillLastWorkout());
+    document.getElementById('rest-timer-toggle').addEventListener('click', () => this.toggleRestTimer());
     this.addExerciseRow();
     this.renderHistory();
   },

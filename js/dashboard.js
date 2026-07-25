@@ -19,6 +19,66 @@ const Dashboard = {
     document.getElementById('hero-kcal-fill').style.width = `${pct}%`;
   },
 
+  dailyGuidance() {
+    const iso = DateUtils.todayISO();
+    const profile = Storage.getProfile();
+    const totals = Nutrition.dayTotals(iso);
+    const water = Water.getAmount(iso);
+    const steps = Steps.getAmount(iso);
+    const todayWorkouts = Workouts.getAll().filter(w => w.date === iso).length
+      + GymPlans.getSessions().filter(s => s.date === iso).length;
+    const proteinLeft = Math.max(0, Math.round(profile.macros.protein - totals.protein));
+    const kcalLeft = Math.max(0, Math.round(profile.macros.kcal - totals.kcal));
+
+    let headline = 'PÄEV ON AVATUD.';
+    let message = `Sul on tänaseks alles ${kcalLeft} kcal ja ${proteinLeft} g valku.`;
+    if (totals.kcal === 0) {
+      headline = 'ALUSTA ÜHEST LIHTSAST ASJAST.';
+      message = 'Lisa esimene söögikord — ülejäänud päev muutub kohe selgemaks.';
+    } else if (proteinLeft > 35) {
+      headline = 'VALK VAJAB TÄHELEPANU.';
+      message = `Valgueesmärgist on puudu ${proteinLeft} g. Planeeri järgmine toidukord selle ümber.`;
+    } else if (water < profile.waterTarget * 0.6) {
+      headline = 'VESI ON TÄNA MAHA JÄÄNUD.';
+      message = `Eesmärgini on ${Math.max(0, profile.waterTarget - water)} ml. Lisa järgmine klaas kohe.`;
+    } else if (!todayWorkouts && steps < 8000) {
+      headline = 'LIIKUMISEKS ON VEEL RUUMI.';
+      message = `Täna on kirjas ${Fmt.int(steps)} sammu. Rahulik jalutuskäik viib päeva kenasti edasi.`;
+    } else {
+      headline = 'PÕHIASJAD ON KONTROLLI ALL.';
+      message = 'Jätka sama rütmiga — sul pole vaja tänast päeva keerulisemaks teha.';
+    }
+    return { headline, message, proteinLeft, kcalLeft };
+  },
+
+  renderDailyBrief() {
+    const el = document.getElementById('daily-brief');
+    const guidance = this.dailyGuidance();
+    el.innerHTML = `
+      <div class="daily-brief-card">
+        <div class="tile-label">TÄNANE FOOKUS</div>
+        <div class="daily-brief-title">${guidance.headline}</div>
+        <div class="daily-brief-text">${guidance.message}</div>
+      </div>
+    `;
+  },
+
+  renderQuickActions() {
+    const actions = [
+      { tab: 'nutrition', label: '+ Lisa toit' },
+      { tab: 'water', label: '+ Lisa vesi' },
+      { tab: 'workouts', label: '+ Logi trenn' },
+      { tab: 'measurements', label: 'Mõõtmised' },
+    ];
+    const el = document.getElementById('dashboard-actions');
+    el.innerHTML = actions.map(action => `
+      <button class="quick-action-btn" data-nav="${action.tab}">${action.label}</button>
+    `).join('');
+    el.querySelectorAll('[data-nav]').forEach(button => {
+      button.addEventListener('click', () => App.showTab(button.dataset.nav));
+    });
+  },
+
   renderHeroWeek() {
     const iso = DateUtils.todayISO();
     document.getElementById('hero-week-num').textContent = DateUtils.weekNumber(iso);
@@ -80,8 +140,20 @@ const Dashboard = {
       </div>
     `;
 
-    const latestM = Measurements.latest();
-    const weightTile = this.secTile('sec-butter', 'KAAL', latestM && latestM.weight ? `${latestM.weight}` : '—', latestM && latestM.weight ? 'KG' : 'POLE MÕÕDETUD', 'measurements');
+    const latestM = Measurements.latestFor('weight');
+    const weightDue = Measurements.isDue('weight', 7);
+    const weightSub = latestM
+      ? (weightDue
+          ? 'KG · SELLE NÄDALA KAAL OOTAB'
+          : `KG · JÄRGMINE ${DateUtils.formatEt(Measurements.nextDueDate('weight', 7)).toUpperCase()}`)
+      : 'NÄDALA KAAL OOTAB';
+    const weightTile = this.secTile(
+      weightDue ? 'sec-butter' : 'sec-blue',
+      'NÄDALA KAAL',
+      latestM ? `${latestM.weight}` : '—',
+      weightSub,
+      'measurements'
+    );
 
     const workouts = Workouts.getAll();
     const lastWorkout = workouts.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -148,13 +220,15 @@ const Dashboard = {
     const sts = Finance.computeSafeToSpend();
     el.innerHTML = `
       <span>TÄNANE KULUTUSEELARVE — ${Finance.fmt(sts.today)} €</span>
-      <a href="#" class="cycle-strip-link" data-nav="finance">RAHA →</a>
+      <a href="#" class="cycle-strip-link" data-nav="finance">FINANTSID →</a>
     `;
     el.querySelector('[data-nav]').addEventListener('click', (e) => { e.preventDefault(); App.showTab('finance'); });
   },
 
   render() {
     this.renderDateRow();
+    this.renderDailyBrief();
+    this.renderQuickActions();
     this.renderHeroEnergy();
     this.renderHeroWeek();
     this.renderSecondaryGrid();

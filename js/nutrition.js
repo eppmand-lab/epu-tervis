@@ -31,6 +31,53 @@ const Nutrition = {
     Storage.set(Storage.KEYS.FOOD_LOG, log);
   },
 
+  copyPreviousDay() {
+    const targetDate = this.selectedDate();
+    const sourceDate = DateUtils.addDays(targetDate, -1);
+    const sourceEntries = this.getDayEntries(sourceDate);
+    if (!sourceEntries.length) {
+      UI.toast('Eelmisel päeval pole kopeeritavaid toite');
+      return;
+    }
+    const log = this.getLog();
+    const existing = log[targetDate] || [];
+    const copies = sourceEntries.map(entry => ({
+      ...entry,
+      id: Fmt.uid(),
+      time: new Date().toISOString(),
+    }));
+    log[targetDate] = existing.concat(copies);
+    Storage.set(Storage.KEYS.FOOD_LOG, log);
+    this.renderAll();
+    UI.toast(`Kopeeritud ${copies.length} kirjet eelmisest päevast`);
+  },
+
+  frequentFoods(limit = 8) {
+    const byName = new Map();
+    Object.values(this.getLog()).flat().forEach(entry => {
+      const key = String(entry.name || '').trim().toLowerCase();
+      if (!key) return;
+      const current = byName.get(key) || { count: 0, latest: entry };
+      current.count++;
+      if ((entry.time || '') >= (current.latest.time || '')) current.latest = entry;
+      byName.set(key, current);
+    });
+    return [...byName.values()]
+      .sort((a, b) => b.count - a.count || (b.latest.time || '').localeCompare(a.latest.time || ''))
+      .slice(0, limit);
+  },
+
+  addFrequentFood(entry) {
+    this.addEntry(this.selectedDate(), {
+      ...entry,
+      id: Fmt.uid(),
+      meal: this.selectedMeal(),
+      time: new Date().toISOString(),
+    });
+    this.renderAll();
+    UI.toast('Sagedane toit lisatud');
+  },
+
   dayTotals(iso) {
     const entries = this.getDayEntries(iso);
     return entries.reduce((acc, e) => {
@@ -223,9 +270,28 @@ const Nutrition = {
     });
   },
 
+  renderFrequentFoods() {
+    const el = document.getElementById('frequent-foods');
+    const foods = this.frequentFoods();
+    if (!foods.length) {
+      el.innerHTML = '<p class="hint">Sagedased toidud ilmuvad siia pärast päeviku kasutamist.</p>';
+      return;
+    }
+    el.innerHTML = foods.map((item, index) => `
+      <button class="quick-food-btn" data-index="${index}">
+        <span>${this._esc(item.latest.name)}</span>
+        <small>${Fmt.int(item.latest.grams)} g · ${Fmt.int(item.latest.kcal)} kcal</small>
+      </button>
+    `).join('');
+    el.querySelectorAll('.quick-food-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.addFrequentFood(foods[parseInt(btn.dataset.index, 10)].latest));
+    });
+  },
+
   renderAll() {
     this.renderMacroSummary();
     this.renderLog();
+    this.renderFrequentFoods();
   },
 
   _esc(s) {
@@ -241,6 +307,7 @@ const Nutrition = {
     document.getElementById('food-search-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); this.runSearch(); }
     });
+    document.getElementById('copy-previous-day').addEventListener('click', () => this.copyPreviousDay());
     this.renderAll();
   },
 };

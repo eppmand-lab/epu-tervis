@@ -26,6 +26,65 @@ const Measurements = {
     return all.length ? all[all.length - 1] : null;
   },
 
+  latestFor(field) {
+    const all = this.getAll().filter(m => m[field] !== null && m[field] !== undefined);
+    return all.length ? all[all.length - 1] : null;
+  },
+
+  daysSince(date) {
+    if (!date) return Infinity;
+    const today = new Date(DateUtils.todayISO() + 'T12:00:00');
+    const previous = new Date(date + 'T12:00:00');
+    return Math.floor((today - previous) / 86400000);
+  },
+
+  isDue(field, intervalDays) {
+    const latest = this.latestFor(field);
+    return !latest || this.daysSince(latest.date) >= intervalDays;
+  },
+
+  nextDueDate(field, intervalDays) {
+    const latest = this.latestFor(field);
+    if (!latest) return DateUtils.todayISO();
+    const date = new Date(latest.date + 'T12:00:00');
+    date.setDate(date.getDate() + intervalDays);
+    return date.toISOString().slice(0, 10);
+  },
+
+  renderCadence() {
+    const el = document.getElementById('measurement-rhythm');
+    if (!el) return;
+    const items = [
+      { field: 'weight', days: 7, label: 'KAAL', rhythm: 'Kord nädalas', input: 'm-weight' },
+      { field: 'bodyFat', days: 90, label: 'RASVAPROTSENT', rhythm: 'Kord 3 kuu jooksul', input: 'm-bodyfat' },
+    ];
+    el.innerHTML = items.map(item => {
+      const latest = this.latestFor(item.field);
+      const due = this.isDue(item.field, item.days);
+      const value = due
+        ? 'MÕÕTMINE ON OODATUD'
+        : `JÄRGMINE: ${DateUtils.formatEt(this.nextDueDate(item.field, item.days)).toUpperCase()}`;
+      const note = latest ? `Viimati ${DateUtils.formatEt(latest.date)}` : 'Varasem mõõtmine puudub';
+      return `
+        <div class="rhythm-item ${due ? 'is-due' : ''}">
+          <div class="tile-label">${item.label} · ${item.rhythm}</div>
+          <div class="rhythm-value">${value}</div>
+          <div class="rhythm-note">${note}</div>
+        </div>
+      `;
+    }).join('');
+
+    items.forEach(item => {
+      const input = document.getElementById(item.input);
+      const due = this.isDue(item.field, item.days);
+      input.disabled = !due;
+      input.classList.toggle('measurement-locked', !due);
+      input.title = due
+        ? ''
+        : `Järgmine mõõtmine: ${DateUtils.formatEt(this.nextDueDate(item.field, item.days))}`;
+    });
+  },
+
   handleSubmit(e) {
     e.preventDefault();
     const date = document.getElementById('m-date').value || DateUtils.todayISO();
@@ -33,11 +92,21 @@ const Measurements = {
       const v = document.getElementById(id).value;
       return v === '' ? null : parseFloat(v);
     };
+    const weight = val('m-weight');
+    const bodyFat = val('m-bodyfat');
+    if (weight !== null && !this.isDue('weight', 7)) {
+      UI.toast('Kaal on sel nädalal juba mõõdetud');
+      return;
+    }
+    if (bodyFat !== null && !this.isDue('bodyFat', 90)) {
+      UI.toast('Rasvaprotsent on selleks kvartaliks juba mõõdetud');
+      return;
+    }
     const entry = {
       id: Fmt.uid(),
       date,
-      weight: val('m-weight'),
-      bodyFat: val('m-bodyfat'),
+      weight,
+      bodyFat,
       waist: val('m-waist'),
       hips: val('m-hips'),
       chest: val('m-chest'),
@@ -144,6 +213,7 @@ const Measurements = {
   },
 
   renderAll() {
+    this.renderCadence();
     this.renderHistory();
     this.renderWeightChart();
     this.renderMetricChart();
