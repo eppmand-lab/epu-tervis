@@ -9,6 +9,12 @@ const Finance = {
     return this.monthKey(DateUtils.todayISO());
   },
 
+  previousMonthKey(monthKey) {
+    const [year, month] = monthKey.split('-').map(Number);
+    const date = new Date(year, month - 2, 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  },
+
   defaultPlan() {
     return { income: 0, fixedCosts: 0, invest: 0, extra: 0, buffer: 0, paydayDay: 5 };
   },
@@ -226,6 +232,35 @@ const Finance = {
     });
   },
 
+  renderMonthTotal() {
+    const monthKey = this.todayMonthKey();
+    const plan = this.getPlan(monthKey);
+    const transactions = this.spentInMonth(monthKey);
+    const total = plan.fixedCosts + transactions;
+    const previousKey = this.previousMonthKey(monthKey);
+    const previousPlan = this.getPlan(previousKey);
+    const previousTransactions = this.spentInMonth(previousKey);
+    const previousTotal = previousPlan.fixedCosts + previousTransactions;
+    const hasPreviousData = previousPlan.fixedCosts > 0 || this.monthTransactions(previousKey).length > 0;
+    const difference = total - previousTotal;
+    const monthLabel = new Intl.DateTimeFormat('et-EE', { month: 'long', year: 'numeric' })
+      .format(new Date(`${monthKey}-01T00:00:00`));
+
+    document.getElementById('finance-month-total').innerHTML = `
+      <div class="finance-total-row">
+        <div>
+          <div class="tile-label">${monthLabel.toUpperCase()} · KUU KULUD KOKKU</div>
+          <div class="finance-total-value">${this.fmt(total)} €</div>
+        </div>
+        <div class="finance-total-detail">
+          <span>PÜSIKULUD ${this.fmt(plan.fixedCosts)} €</span>
+          <span>MUUD KULUKANDED ${this.fmt(transactions)} €</span>
+          ${hasPreviousData ? `<span class="${difference <= 0 ? 'is-positive' : 'is-negative'}">EELMISE KUUGA ${difference > 0 ? '+' : ''}${this.fmt(difference)} €</span>` : ''}
+        </div>
+      </div>
+    `;
+  },
+
   renderSecondary() {
     const monthKey = this.todayMonthKey();
     const plan = this.getPlan(monthKey);
@@ -240,7 +275,7 @@ const Finance = {
     const el = document.getElementById('finance-secondary');
     el.innerHTML = `
       <div class="sec-tile sec-blue">
-        <div class="tile-label">KULUTATUD SEL KUUL</div>
+        <div class="tile-label">MUUD KULUKANDED SEL KUUL</div>
         <div class="sec-tile-value">${this.fmt(spent)} €</div>
         <div class="sec-tile-sub">VABA ${this.fmt(free)} €-st</div>
       </div>
@@ -612,6 +647,7 @@ const Finance = {
   },
 
   renderAll() {
+    this.renderMonthTotal();
     this.renderStsHero();
     this.renderSecondary();
     this.renderUpcoming();

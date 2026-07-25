@@ -31,7 +31,7 @@ const ChartTheme = {
             padding: 10,
             cornerRadius: 2,
             displayColors: true,
-            titleFont: { family: 'Barlow Condensed', weight: '700' },
+            titleFont: { family: 'Inter', weight: '700' },
             bodyFont: { family: 'Inter' },
           },
         },

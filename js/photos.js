@@ -1,6 +1,6 @@
 const Photos = {
-  MAX_DIM: 900,
-  JPEG_QUALITY: 0.72,
+  MAX_DIM: 720,
+  JPEG_QUALITY: 0.64,
 
   getAll() {
     return Storage.get(Storage.KEYS.PHOTOS, []);
@@ -30,7 +30,18 @@ const Photos = {
   },
 
   // Resize + JPEG-tihenda, et localStorage'i maht püsiks mõistlik.
-  resizeImage(file) {
+  async normalizeImage(file) {
+    const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+    if (!isHeic) return file;
+    if (typeof heic2any !== 'function') {
+      throw new Error('HEIC_TUGI_PUUDUB');
+    }
+    const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.86 });
+    return Array.isArray(converted) ? converted[0] : converted;
+  },
+
+  async resizeImage(file) {
+    const imageFile = await this.normalizeImage(file);
     return new Promise((resolve, reject) => {
       const img = new Image();
       const reader = new FileReader();
@@ -53,30 +64,50 @@ const Photos = {
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL('image/jpeg', this.JPEG_QUALITY));
       };
-      img.onerror = reject;
-      reader.readAsDataURL(file);
+      img.onerror = () => reject(new Error('PILTI_EI_SAA_AVADA'));
+      reader.readAsDataURL(imageFile);
     });
   },
 
   async handleAdd() {
     const input = document.getElementById('photo-input');
     const note = document.getElementById('photo-note').value.trim();
-    const file = input.files[0];
-    if (!file) { UI.toast('Vali kõigepealt foto'); return; }
-    UI.toast('Töötlen fotot...');
+    const date = document.getElementById('photo-date').value || DateUtils.todayISO();
+    const files = Array.from(input.files || []);
+    if (!files.length) { UI.toast('Vali kõigepealt vähemalt üks foto'); return; }
+    if (files.length > 3) { UI.toast('Ühe kuupäeva kohta saab korraga valida kuni 3 fotot'); return; }
+    const existingCount = this.getAll().filter(photo => photo.date === date).length;
+    if (existingCount + files.length > 3) {
+      UI.toast(`Kuupäeval ${DateUtils.formatEt(date)} on juba ${existingCount} fotot. Kokku saab olla kuni 3.`);
+      return;
+    }
+    UI.toast(`Töötlen ${files.length} ${files.length === 1 ? 'fotot' : 'fotot'}...`);
     try {
-      const dataUrl = await this.resizeImage(file);
-      const entry = { id: Fmt.uid(), date: DateUtils.todayISO(), image: dataUrl, note, analysis: null };
-      const ok = this.add(entry);
+      const images = [];
+      for (const file of files) {
+        images.push(await this.resizeImage(file));
+      }
+      const all = this.getAll();
+      images.forEach(image => {
+        all.push({ id: Fmt.uid(), date, image, note, analysis: null });
+      });
+      all.sort((a, b) => a.date.localeCompare(b.date));
+      const ok = this.save(all);
       if (ok) {
         input.value = '';
         document.getElementById('photo-note').value = '';
         this.renderAll();
-        UI.toast('Foto lisatud');
+        UI.toast(`${images.length} ${images.length === 1 ? 'foto lisatud' : 'fotot lisatud'}`);
       }
     } catch (e) {
       console.error(e);
-      UI.toast('Foto töötlemine ebaõnnestus');
+      if (e.message === 'HEIC_TUGI_PUUDUB') {
+        UI.toast('HEIC-foto teisendamine ei käivitunud. Kontrolli internetiühendust või vali JPG-foto.');
+      } else if (e.message === 'PILTI_EI_SAA_AVADA') {
+        UI.toast('Seda fotofaili ei saa avada. Proovi JPG-, PNG- või HEIC-faili.');
+      } else {
+        UI.toast('Foto töötlemine ebaõnnestus. Proovi väiksemat või JPG-vormingus pilti.');
+      }
     }
   },
 
@@ -151,25 +182,39 @@ const Photos = {
   },
 
   renderGallery() {
-    const all = this.getAll().slice().reverse();
+    const all = this.getAll().slice().sort((a, b) => b.date.localeCompare(a.date));
     const el = document.getElementById('photo-gallery');
     if (!all.length) {
       el.innerHTML = '<p class="hint">POLE ÜHTEGI FOTOT. AEG ALUSTADA.</p>';
       return;
     }
-    el.innerHTML = all.map(p => `
-      <div class="photo-tile">
-        <img src="${p.image}" alt="Progressifoto ${p.date}">
-        <div class="photo-tile-body">
-          <div class="photo-tile-date">${DateUtils.formatEt(p.date)}</div>
-          ${p.note ? `<div class="photo-tile-note">${this._esc(p.note)}</div>` : ''}
-          <div class="photo-tile-actions">
-            <button class="btn btn-secondary" data-analyze="${p.id}">Analüüsi Claude'iga</button>
-            <button class="btn btn-ghost danger" data-delete="${p.id}">Kustuta</button>
-          </div>
-          ${p.analysis ? `<div class="photo-tile-analysis">${this._esc(p.analysis)}</div>` : ''}
+    const grouped = all.reduce((groups, photo) => {
+      if (!groups[photo.date]) groups[photo.date] = [];
+      groups[photo.date].push(photo);
+      return groups;
+    }, {});
+    el.innerHTML = Object.entries(grouped).map(([date, photos]) => `
+      <section class="photo-date-group">
+        <div class="photo-date-heading">
+          <strong>${DateUtils.formatEt(date)}</strong>
+          <span>${photos.length}/3 FOTOT</span>
         </div>
-      </div>
+        <div class="photo-gallery">
+          ${photos.map(p => `
+            <div class="photo-tile">
+              <img src="${p.image}" alt="Progressifoto ${p.date}">
+              <div class="photo-tile-body">
+                ${p.note ? `<div class="photo-tile-note">${this._esc(p.note)}</div>` : ''}
+                <div class="photo-tile-actions">
+                  <button class="btn btn-secondary" data-analyze="${p.id}">Analüüsi Claude'iga</button>
+                  <button class="btn btn-ghost danger" data-delete="${p.id}">Kustuta</button>
+                </div>
+                ${p.analysis ? `<div class="photo-tile-analysis">${this._esc(p.analysis)}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
     `).join('');
     el.querySelectorAll('[data-analyze]').forEach(btn => {
       btn.addEventListener('click', () => this.analyze(btn.dataset.analyze));
@@ -186,37 +231,44 @@ const Photos = {
 
   renderComparison() {
     const all = this.getAll().slice().sort((a, b) => a.date.localeCompare(b.date));
+    const dates = [...new Set(all.map(photo => photo.date))];
     const beforeSelect = document.getElementById('photo-compare-before');
     const afterSelect = document.getElementById('photo-compare-after');
     const comparison = document.getElementById('photo-comparison');
     if (!beforeSelect || !afterSelect || !comparison) return;
 
-    if (all.length < 2) {
+    if (dates.length < 2) {
       beforeSelect.innerHTML = '';
       afterSelect.innerHTML = '';
       beforeSelect.disabled = true;
       afterSelect.disabled = true;
-      comparison.innerHTML = '<p class="hint">Võrdluseks lisa vähemalt kaks fotot.</p>';
+      comparison.innerHTML = '<p class="hint">Võrdluseks lisa fotod vähemalt kahele eri kuupäevale.</p>';
       return;
     }
 
     const previousBefore = beforeSelect.value;
     const previousAfter = afterSelect.value;
-    const options = all.map(p => `<option value="${p.id}">${DateUtils.formatEt(p.date)}${p.note ? ` · ${this._esc(p.note)}` : ''}</option>`).join('');
+    const options = dates.map(date => `<option value="${date}">${DateUtils.formatEt(date)} · ${all.filter(p => p.date === date).length} fotot</option>`).join('');
     beforeSelect.innerHTML = options;
     afterSelect.innerHTML = options;
     beforeSelect.disabled = false;
     afterSelect.disabled = false;
-    beforeSelect.value = all.some(p => p.id === previousBefore) ? previousBefore : all[0].id;
-    afterSelect.value = all.some(p => p.id === previousAfter) ? previousAfter : all[all.length - 1].id;
+    beforeSelect.value = dates.includes(previousBefore) ? previousBefore : dates[0];
+    afterSelect.value = dates.includes(previousAfter) ? previousAfter : dates[dates.length - 1];
 
-    const before = all.find(p => p.id === beforeSelect.value);
-    const after = all.find(p => p.id === afterSelect.value);
-    const dayDifference = Math.max(0, Math.round((new Date(`${after.date}T00:00:00`) - new Date(`${before.date}T00:00:00`)) / 86400000));
+    const beforePhotos = all.filter(p => p.date === beforeSelect.value);
+    const afterPhotos = all.filter(p => p.date === afterSelect.value);
+    const dayDifference = Math.abs(Math.round((new Date(`${afterSelect.value}T00:00:00`) - new Date(`${beforeSelect.value}T00:00:00`)) / 86400000));
     comparison.innerHTML = `
       <div class="photo-comparison">
-        <figure><img src="${before.image}" alt="Varasem progressifoto"><figcaption>ENNE · ${DateUtils.formatEt(before.date)}</figcaption></figure>
-        <figure><img src="${after.image}" alt="Hilisem progressifoto"><figcaption>PÄRAST · ${DateUtils.formatEt(after.date)}</figcaption></figure>
+        <div class="photo-compare-side">
+          <div class="photo-compare-label">ENNE · ${DateUtils.formatEt(beforeSelect.value)}</div>
+          ${beforePhotos.map((photo, index) => `<img src="${photo.image}" alt="Varasem progressifoto ${index + 1}">`).join('')}
+        </div>
+        <div class="photo-compare-side">
+          <div class="photo-compare-label">PÄRAST · ${DateUtils.formatEt(afterSelect.value)}</div>
+          ${afterPhotos.map((photo, index) => `<img src="${photo.image}" alt="Hilisem progressifoto ${index + 1}">`).join('')}
+        </div>
       </div>
       <div class="photo-compare-duration">${dayDifference} PÄEVA VAHEL</div>
     `;
@@ -235,6 +287,7 @@ const Photos = {
   },
 
   init() {
+    document.getElementById('photo-date').value = DateUtils.todayISO();
     document.getElementById('photo-add-btn').addEventListener('click', () => this.handleAdd());
     document.getElementById('photo-compare-before').addEventListener('change', () => this.renderComparison());
     document.getElementById('photo-compare-after').addEventListener('change', () => this.renderComparison());
