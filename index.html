@@ -22,21 +22,19 @@
 
 <div class="app-shell">
 
-  <div class="brandbar">
+  <div class="brandbar theme-body">
     <span class="brand-mark">EPP 3.5</span>
   </div>
-  <nav class="tabbar" id="tabbar">
-    <button class="tab-btn active" data-tab="dashboard">TÄNA</button>
-    <button class="tab-btn" data-tab="nutrition">KÜTUS</button>
-    <button class="tab-btn" data-tab="workouts">TRENN</button>
-    <button class="tab-btn" data-tab="gymplans">KAVAD</button>
-    <button class="tab-btn" data-tab="measurements">KEHA</button>
-    <button class="tab-btn" data-tab="cycle">TSÜKKEL</button>
-    <button class="tab-btn" data-tab="water">VESI</button>
-    <button class="tab-btn" data-tab="photos">FOTOD</button>
-    <button class="tab-btn" data-tab="finance">RAHA</button>
-    <button class="tab-btn" data-tab="settings">SEADED</button>
+  <nav class="tabbar theme-body" id="tabbar">
+    <button class="tab-btn active" data-group="today" data-tab="dashboard">TÄNA</button>
+    <button class="tab-btn" data-group="nutrition" data-tab="nutrition">TOITUMINE</button>
+    <button class="tab-btn" data-group="movement" data-tab="workouts">LIIKUMINE</button>
+    <button class="tab-btn" data-group="body" data-tab="measurements">KEHA</button>
+    <button class="tab-btn" data-group="progress" data-tab="progress">PROGRESS</button>
+    <button class="tab-btn" data-group="finance" data-tab="finance">FINANTSID</button>
+    <button class="tab-btn" data-group="settings" data-tab="settings">SEADED</button>
   </nav>
+  <nav class="subtabbar hidden" id="subtabbar" aria-label="Alamvaated"></nav>
 
   <main class="content">
 
@@ -44,6 +42,9 @@
       <div class="date-row">
         <span id="dashboard-date"></span>
       </div>
+
+      <div id="daily-brief"></div>
+      <div class="quick-actions" id="dashboard-actions"></div>
 
       <div class="hero-row">
         <div class="hero-energy">
@@ -84,6 +85,9 @@
       <div class="card">
         <label>Kuupäev <input type="date" id="nutrition-date"></label>
         <div class="macro-summary" id="macro-summary"></div>
+        <div class="btn-row nutrition-day-actions">
+          <button class="btn btn-ghost" id="copy-previous-day">Kopeeri eelmine päev</button>
+        </div>
       </div>
       <div class="card">
         <h2>Lisa toit</h2>
@@ -101,6 +105,11 @@
         </div>
         <div id="food-search-results" class="search-results"></div>
         <div id="manual-food-form" class="manual-food-form hidden"></div>
+      </div>
+      <div class="card">
+        <h2>Sagedased toidud</h2>
+        <p class="hint">Lisa oma enim kasutatud toit ühe puudutusega samas koguses ja valitud söögikorra alla.</p>
+        <div class="quick-foods" id="frequent-foods"></div>
       </div>
       <div class="card">
         <h2>Päevik</h2>
@@ -141,6 +150,17 @@
           </label>
           <button type="submit" class="btn btn-primary">Salvesta treening</button>
         </form>
+      </div>
+      <div class="card workout-tools">
+        <h2>Treeningu abivahendid</h2>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="copy-last-workout">Kopeeri viimane treening</button>
+          <button class="btn btn-ghost" id="rest-timer-toggle">Puhkepaus 01:30</button>
+        </div>
+        <div class="rest-timer hidden" id="rest-timer">
+          <div class="rest-timer-value" id="rest-timer-value">01:30</div>
+          <div class="hint">Puhkepausi taimer</div>
+        </div>
       </div>
       <div class="card">
         <h2>Impordi treeningud</h2>
@@ -183,7 +203,12 @@
     <section id="tab-measurements" class="tab-panel">
       <header class="panel-header"><h1>Kehamõõdud</h1></header>
       <div class="card">
+        <h2>Mõõtmiste rütm</h2>
+        <div class="measurement-rhythm" id="measurement-rhythm"></div>
+      </div>
+      <div class="card">
         <h2>Uus mõõtmine</h2>
+        <p class="hint">Kaal salvestatakse kord 7 päeva jooksul. Rasvaprotsent kord 3 kuu jooksul. Ümbermõõte saad lisada vajaduse järgi.</p>
         <form id="measurement-form" class="stacked-form">
           <div class="form-row">
             <label>Kuupäev <input type="date" id="m-date" required></label>
@@ -274,6 +299,26 @@
       <div class="card">
         <h2>Fotode ajalugu</h2>
         <div id="photo-gallery" class="photo-gallery"></div>
+      </div>
+    </section>
+
+    <section id="tab-progress" class="tab-panel">
+      <header class="panel-header">
+        <h1>Progress</h1>
+        <p class="muted">Pikaajaline suund, mitte ühe päeva juhuslik number.</p>
+      </header>
+      <div class="progress-summary" id="progress-summary"></div>
+      <div class="card">
+        <h2>Kaalu nädalatrend</h2>
+        <div class="chart-wrap"><canvas id="chart-progress-weight"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Treeningud nädalate kaupa</h2>
+        <div class="chart-wrap"><canvas id="chart-progress-workouts"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Viimase 7 päeva järjepidevus</h2>
+        <div id="progress-consistency"></div>
       </div>
     </section>
 
@@ -480,6 +525,7 @@
 <script src="js/finance.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/weekly.js"></script>
+<script src="js/progress.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/app.js"></script>
 <script>
