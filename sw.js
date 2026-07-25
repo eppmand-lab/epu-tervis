@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'epu-tervis-v6';
+const CACHE_VERSION = 'epu-tervis-v8';
 
 const PRECACHE_URLS = [
   './',
@@ -27,6 +27,7 @@ const PRECACHE_URLS = [
   './icons/icon-512-maskable.png',
   './icons/apple-touch-icon.png',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js',
 ];
 
 self.addEventListener('install', (event) => {
