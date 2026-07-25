@@ -33,11 +33,10 @@ const Photos = {
   async normalizeImage(file) {
     const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
     if (!isHeic) return file;
-    if (typeof heic2any !== 'function') {
+    if (typeof HeicTo !== 'function') {
       throw new Error('HEIC_TUGI_PUUDUB');
     }
-    const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.86 });
-    return Array.isArray(converted) ? converted[0] : converted;
+    return HeicTo({ blob: file, type: 'image/jpeg', quality: 0.86 });
   },
 
   async resizeImage(file) {
