@@ -82,6 +82,15 @@ const GymPlans = {
     return null;
   },
 
+  lastEntryFor(exerciseName) {
+    const sessions = this.getSessions().slice().sort((a, b) => b.date.localeCompare(a.date));
+    for (const session of sessions) {
+      const entry = session.entries.find(e => e.exerciseName === exerciseName);
+      if (entry) return entry;
+    }
+    return null;
+  },
+
   renderProgramTabs() {
     const el = document.getElementById('gym-program-tabs');
     el.innerHTML = this.PROGRAMS.map(p => `
@@ -101,12 +110,13 @@ const GymPlans = {
     document.getElementById('gym-program-title').textContent = program.label;
     const el = document.getElementById('gym-exercise-rows');
     el.innerHTML = program.exercises.map((ex, i) => {
-      const last = this.lastWeightFor(ex.name);
+      const last = this.lastEntryFor(ex.name);
       return `
         <div class="gym-ex-row">
           <div class="gym-ex-name">${this._esc(ex.name)}</div>
           <div class="gym-ex-ref">${this._esc(ex.ref)}</div>
-          <input class="gym-ex-weight" type="number" step="0.5" placeholder="kg" data-idx="${i}" value="${last !== null ? last : ''}">
+          <input class="gym-ex-weight" type="number" step="0.5" placeholder="kg" data-idx="${i}" value="${last?.weight ?? ''}">
+          <input class="gym-ex-reps" type="text" inputmode="numeric" placeholder="nt 16/14/12" data-idx="${i}" value="${this._esc(last?.reps || '')}">
         </div>
       `;
     }).join('');
@@ -117,15 +127,17 @@ const GymPlans = {
     const program = this.getProgram(this.activeProgramId);
     const notes = document.getElementById('gym-notes').value.trim();
     const weightInputs = document.querySelectorAll('#gym-exercise-rows .gym-ex-weight');
+    const repsInputs = document.querySelectorAll('#gym-exercise-rows .gym-ex-reps');
     const entries = [];
     weightInputs.forEach(input => {
       const idx = parseInt(input.dataset.idx, 10);
       const weight = input.value === '' ? null : parseFloat(input.value);
-      if (weight !== null) {
-        entries.push({ exerciseName: program.exercises[idx].name, weight });
+      const reps = repsInputs[idx].value.trim();
+      if (weight !== null || reps) {
+        entries.push({ exerciseName: program.exercises[idx].name, weight, reps });
       }
     });
-    if (!entries.length) { UI.toast('Sisesta vähemalt ühe harjutuse raskus'); return; }
+    if (!entries.length) { UI.toast('Sisesta vähemalt ühe harjutuse raskus või kordused'); return; }
     this.addSession({ id: Fmt.uid(), date, programId: program.id, programLabel: program.label, entries, notes });
     document.getElementById('gym-notes').value = '';
     this.renderAll();
@@ -154,7 +166,7 @@ const GymPlans = {
     const points = sessions.map(s => ({
       date: s.date,
       weight: s.entries.find(e => e.exerciseName === exerciseName).weight,
-    }));
+    })).filter(p => p.weight !== null && p.weight !== undefined);
     const ctx = document.getElementById('chart-gym-progress');
     ChartTheme.destroy(this.progressChart);
     this.progressChart = new Chart(ctx, ChartTheme.base('line', {
@@ -190,7 +202,13 @@ const GymPlans = {
           <button class="he-remove" data-id="${s.id}">Kustuta</button>
         </div>
         <div class="he-title">${this._esc(s.programLabel)}</div>
-        <div class="he-sub">${s.entries.map(e => `${this._esc(e.exerciseName)}: ${e.weight}kg`).join(' · ')}</div>
+        <div class="he-sub">${s.entries.map(e => {
+          const detail = [
+            e.weight !== null && e.weight !== undefined ? `${e.weight}kg` : '',
+            e.reps ? `${this._esc(e.reps)} kordust` : '',
+          ].filter(Boolean).join(' · ');
+          return `${this._esc(e.exerciseName)}: ${detail}`;
+        }).join('<br>')}</div>
         ${s.notes ? `<div class="he-sub">${this._esc(s.notes)}</div>` : ''}
       </div>
     `).join('');

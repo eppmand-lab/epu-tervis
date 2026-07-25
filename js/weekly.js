@@ -155,6 +155,36 @@ const WeeklyAnalysis = {
     }
   },
 
+  buildInsights(stats, profile) {
+    const insights = [];
+    const foodCoverage = Math.round((stats.loggedFoodDays / stats.days) * 100);
+    const stepCoverage = Math.round((stats.loggedStepDays / stats.days) * 100);
+    if (stats.workoutCount >= 3) {
+      insights.push({ tone: 'good', label: 'TUGEV NÄDAL', text: `${stats.workoutCount} treeningut ja ${stats.workoutDuration} minutit liikumist.` });
+    } else if (stats.workoutCount > 0) {
+      insights.push({ tone: 'neutral', label: 'HOIA RÜTMI', text: `${stats.workoutCount} treening${stats.workoutCount === 1 ? '' : 'ut'} tehtud — järgmine väike samm on järjepidevus.` });
+    } else {
+      insights.push({ tone: 'attention', label: 'UUS ALGUS', text: 'Treeninguid pole veel logitud. Planeeri järgmine liikumine ette.' });
+    }
+
+    if (stats.loggedFoodDays) {
+      const proteinPct = profile.macros.protein ? Math.round((stats.avgProtein / profile.macros.protein) * 100) : 0;
+      insights.push({
+        tone: proteinPct >= 90 ? 'good' : 'neutral',
+        label: 'VALGU SIHT',
+        text: `${stats.avgProtein} g päevas ehk ${proteinPct}% eesmärgist.`,
+      });
+    }
+
+    const weakestCoverage = Math.min(foodCoverage, stepCoverage);
+    if (weakestCoverage < 70) {
+      insights.push({ tone: 'attention', label: 'ANDMETE KVALITEET', text: `Toitumine ${foodCoverage}% ja sammud ${stepCoverage}% nädalast logitud — rohkem kirjeid annab täpsema pildi.` });
+    } else {
+      insights.push({ tone: 'good', label: 'HEA ÜLEVAADE', text: `Toitumine ${foodCoverage}% ja sammud ${stepCoverage}% nädalast logitud.` });
+    }
+    return insights.slice(0, 3);
+  },
+
   renderCard() {
     const el = document.getElementById('weekly-analysis-card');
     const record = this.latest();
@@ -179,6 +209,7 @@ const WeeklyAnalysis = {
 
     const statLines = [
       `KALORID — ${s.avgKcal} / ${profile.macros.kcal} KCAL KESKMISELT · LOGITUD ${s.loggedFoodDays}/${s.days} PÄEVAL`,
+      `MAKROD — V ${s.avgProtein}/${profile.macros.protein}G · R ${s.avgFat}/${profile.macros.fat}G · SV ${s.avgCarbs}/${profile.macros.carbs}G`,
       `TRENN — ${s.workoutCount}x, ${s.workoutDuration} MIN KOKKU`,
       `VESI — ${s.avgWater} ML/PÄEV KESKMISELT`,
       `SAMMUD — ${s.avgSteps}/PÄEV · LOGITUD ${s.loggedStepDays}/${s.days} PÄEVAL`,
@@ -195,12 +226,24 @@ const WeeklyAnalysis = {
     } else if (!profile.anthropicApiKey) {
       aiBlock = `<div class="weekly-ai-plain">Lisa Anthropic API võti Seaded lehel, et saada ka AI-kommentaar.</div>`;
     }
+    const insights = this.buildInsights(s, profile);
+    const insightBlock = `
+      <div class="weekly-insights">
+        ${insights.map(item => `
+          <div class="weekly-insight ${item.tone}">
+            <span>${item.label}</span>
+            <p>${this._esc(item.text)}</p>
+          </div>
+        `).join('')}
+      </div>
+    `;
 
     el.innerHTML = `
       <div class="weekly-poster">
         <div class="tile-label">NÄDALA RAPORT · ${DateUtils.formatEt(record.start).toUpperCase()} – ${DateUtils.formatEt(record.end).toUpperCase()}</div>
         <div class="weekly-headline">${headline}</div>
         <div class="weekly-stats-plain">${statLines.join('<br>')}</div>
+        ${insightBlock}
         ${aiBlock}
         <button class="weekly-btn" id="weekly-generate-btn">UUENDA RAPORT →</button>
       </div>

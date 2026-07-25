@@ -78,6 +78,58 @@ const Nutrition = {
     UI.toast('Sagedane toit lisatud');
   },
 
+  getRecipes() {
+    return Storage.get(Storage.KEYS.RECIPES, []);
+  },
+
+  saveRecipes(recipes) {
+    Storage.set(Storage.KEYS.RECIPES, recipes);
+  },
+
+  saveSelectedMealAsRecipe() {
+    const nameInput = document.getElementById('recipe-name');
+    const name = nameInput.value.trim();
+    if (!name) {
+      UI.toast('Sisesta retsepti nimi');
+      nameInput.focus();
+      return;
+    }
+    const meal = this.selectedMeal();
+    const items = this.getDayEntries(this.selectedDate())
+      .filter(entry => (entry.meal || 'hommik') === meal)
+      .map(({ id, time, meal: ignoredMeal, ...entry }) => entry);
+    if (!items.length) {
+      UI.toast('Valitud söögikorras pole veel toite');
+      return;
+    }
+    const recipes = this.getRecipes();
+    recipes.push({ id: Fmt.uid(), name, items, createdAt: new Date().toISOString() });
+    this.saveRecipes(recipes);
+    nameInput.value = '';
+    this.renderRecipes();
+    UI.toast('Retsept salvestatud');
+  },
+
+  addRecipe(recipe) {
+    const iso = this.selectedDate();
+    const meal = this.selectedMeal();
+    recipe.items.forEach(item => {
+      this.addEntry(iso, {
+        ...item,
+        id: Fmt.uid(),
+        meal,
+        time: new Date().toISOString(),
+      });
+    });
+    this.renderAll();
+    UI.toast(`Retsept „${recipe.name}” lisatud`);
+  },
+
+  removeRecipe(id) {
+    this.saveRecipes(this.getRecipes().filter(recipe => recipe.id !== id));
+    this.renderRecipes();
+  },
+
   dayTotals(iso) {
     const entries = this.getDayEntries(iso);
     return entries.reduce((acc, e) => {
@@ -288,10 +340,45 @@ const Nutrition = {
     });
   },
 
+  renderRecipes() {
+    const el = document.getElementById('recipe-list');
+    const recipes = this.getRecipes();
+    if (!recipes.length) {
+      el.innerHTML = '<p class="hint">Salvestatud retseptid ilmuvad siia.</p>';
+      return;
+    }
+    el.innerHTML = recipes.map(recipe => {
+      const totals = recipe.items.reduce((sum, item) => {
+        sum.kcal += item.kcal || 0;
+        sum.protein += item.protein || 0;
+        return sum;
+      }, { kcal: 0, protein: 0 });
+      return `
+        <div class="recipe-item">
+          <button class="recipe-add" data-recipe-add="${recipe.id}">
+            <strong>${this._esc(recipe.name)}</strong>
+            <small>${recipe.items.length} koostisosa · ${Fmt.int(totals.kcal)} kcal · V ${Fmt.round1(totals.protein)}g</small>
+          </button>
+          <button class="fli-remove" data-recipe-delete="${recipe.id}" title="Kustuta retsept">✕</button>
+        </div>
+      `;
+    }).join('');
+    el.querySelectorAll('[data-recipe-add]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const recipe = this.getRecipes().find(item => item.id === btn.dataset.recipeAdd);
+        if (recipe) this.addRecipe(recipe);
+      });
+    });
+    el.querySelectorAll('[data-recipe-delete]').forEach(btn => {
+      btn.addEventListener('click', () => this.removeRecipe(btn.dataset.recipeDelete));
+    });
+  },
+
   renderAll() {
     this.renderMacroSummary();
     this.renderLog();
     this.renderFrequentFoods();
+    this.renderRecipes();
   },
 
   _esc(s) {
@@ -308,6 +395,7 @@ const Nutrition = {
       if (e.key === 'Enter') { e.preventDefault(); this.runSearch(); }
     });
     document.getElementById('copy-previous-day').addEventListener('click', () => this.copyPreviousDay());
+    document.getElementById('recipe-save-btn').addEventListener('click', () => this.saveSelectedMealAsRecipe());
     this.renderAll();
   },
 };

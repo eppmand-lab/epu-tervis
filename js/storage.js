@@ -3,6 +3,7 @@ const Storage = {
   KEYS: {
     PROFILE: 'fitness_profile',
     FOOD_LOG: 'fitness_food_log',
+    RECIPES: 'fitness_recipes',
     WORKOUTS: 'fitness_workouts',
     MEASUREMENTS: 'fitness_measurements',
     CYCLE: 'fitness_cycle',

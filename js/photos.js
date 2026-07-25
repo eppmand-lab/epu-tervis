@@ -184,6 +184,44 @@ const Photos = {
     });
   },
 
+  renderComparison() {
+    const all = this.getAll().slice().sort((a, b) => a.date.localeCompare(b.date));
+    const beforeSelect = document.getElementById('photo-compare-before');
+    const afterSelect = document.getElementById('photo-compare-after');
+    const comparison = document.getElementById('photo-comparison');
+    if (!beforeSelect || !afterSelect || !comparison) return;
+
+    if (all.length < 2) {
+      beforeSelect.innerHTML = '';
+      afterSelect.innerHTML = '';
+      beforeSelect.disabled = true;
+      afterSelect.disabled = true;
+      comparison.innerHTML = '<p class="hint">Võrdluseks lisa vähemalt kaks fotot.</p>';
+      return;
+    }
+
+    const previousBefore = beforeSelect.value;
+    const previousAfter = afterSelect.value;
+    const options = all.map(p => `<option value="${p.id}">${DateUtils.formatEt(p.date)}${p.note ? ` · ${this._esc(p.note)}` : ''}</option>`).join('');
+    beforeSelect.innerHTML = options;
+    afterSelect.innerHTML = options;
+    beforeSelect.disabled = false;
+    afterSelect.disabled = false;
+    beforeSelect.value = all.some(p => p.id === previousBefore) ? previousBefore : all[0].id;
+    afterSelect.value = all.some(p => p.id === previousAfter) ? previousAfter : all[all.length - 1].id;
+
+    const before = all.find(p => p.id === beforeSelect.value);
+    const after = all.find(p => p.id === afterSelect.value);
+    const dayDifference = Math.max(0, Math.round((new Date(`${after.date}T00:00:00`) - new Date(`${before.date}T00:00:00`)) / 86400000));
+    comparison.innerHTML = `
+      <div class="photo-comparison">
+        <figure><img src="${before.image}" alt="Varasem progressifoto"><figcaption>ENNE · ${DateUtils.formatEt(before.date)}</figcaption></figure>
+        <figure><img src="${after.image}" alt="Hilisem progressifoto"><figcaption>PÄRAST · ${DateUtils.formatEt(after.date)}</figcaption></figure>
+      </div>
+      <div class="photo-compare-duration">${dayDifference} PÄEVA VAHEL</div>
+    `;
+  },
+
   _esc(s) {
     const d = document.createElement('div');
     d.textContent = s;
@@ -191,12 +229,15 @@ const Photos = {
   },
 
   renderAll() {
+    this.renderComparison();
     this.renderGallery();
     this.renderStorageHint();
   },
 
   init() {
     document.getElementById('photo-add-btn').addEventListener('click', () => this.handleAdd());
+    document.getElementById('photo-compare-before').addEventListener('change', () => this.renderComparison());
+    document.getElementById('photo-compare-after').addEventListener('change', () => this.renderComparison());
     this.renderAll();
   },
 };
