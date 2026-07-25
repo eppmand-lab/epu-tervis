@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -112,6 +112,15 @@
         <div class="quick-foods" id="frequent-foods"></div>
       </div>
       <div class="card">
+        <h2>Minu retseptid</h2>
+        <p class="hint">Salvesta valitud söögikorra kõik toidud üheks retseptiks ja lisa see hiljem ühe puudutusega.</p>
+        <div class="recipe-save-row">
+          <input type="text" id="recipe-name" placeholder="Retsepti nimi">
+          <button class="btn btn-secondary" id="recipe-save-btn">Salvesta valitud söögikord</button>
+        </div>
+        <div class="recipe-list" id="recipe-list"></div>
+      </div>
+      <div class="card">
         <h2>Päevik</h2>
         <div id="food-log-list"></div>
       </div>
@@ -183,6 +192,9 @@
       </div>
       <div class="card">
         <h2 id="gym-program-title"></h2>
+        <div class="gym-column-head">
+          <span>Harjutus</span><span>Kava</span><span>Raskus</span><span>Kordused</span>
+        </div>
         <div id="gym-exercise-rows"></div>
         <label>Märkmed <textarea id="gym-notes" rows="2" placeholder="Kuidas trenn läks?"></textarea></label>
         <button class="btn btn-primary" id="gym-save-btn">Salvesta trenn</button>
@@ -295,6 +307,15 @@
         <label>Märkus <input type="text" id="photo-note" placeholder="nt. Hommikul, tühja kõhuga"></label>
         <button class="btn btn-primary" id="photo-add-btn">Lisa foto</button>
         <p class="hint" id="photo-storage-hint"></p>
+      </div>
+      <div class="card">
+        <h2>Võrdle fotosid</h2>
+        <p class="hint">Vali kaks fotot, et näha muutust rahulikult kõrvuti.</p>
+        <div class="photo-compare-controls">
+          <label>Varasem foto <select id="photo-compare-before"></select></label>
+          <label>Hilisem foto <select id="photo-compare-after"></select></label>
+        </div>
+        <div id="photo-comparison"></div>
       </div>
       <div class="card">
         <h2>Fotode ajalugu</h2>
@@ -511,23 +532,23 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="js/storage.js?v=5"></script>
-<script src="js/utils.js?v=5"></script>
-<script src="js/charts.js?v=5"></script>
-<script src="js/nutrition.js?v=5"></script>
-<script src="js/workouts.js?v=5"></script>
-<script src="js/gymplans.js?v=5"></script>
-<script src="js/measurements.js?v=5"></script>
-<script src="js/cycle.js?v=5"></script>
-<script src="js/water.js?v=5"></script>
-<script src="js/steps.js?v=5"></script>
-<script src="js/photos.js?v=5"></script>
-<script src="js/finance.js?v=5"></script>
-<script src="js/settings.js?v=5"></script>
-<script src="js/weekly.js?v=5"></script>
-<script src="js/progress.js?v=5"></script>
-<script src="js/dashboard.js?v=5"></script>
-<script src="js/app.js?v=5"></script>
+<script src="js/storage.js?v=6"></script>
+<script src="js/utils.js?v=6"></script>
+<script src="js/charts.js?v=6"></script>
+<script src="js/nutrition.js?v=6"></script>
+<script src="js/workouts.js?v=6"></script>
+<script src="js/gymplans.js?v=6"></script>
+<script src="js/measurements.js?v=6"></script>
+<script src="js/cycle.js?v=6"></script>
+<script src="js/water.js?v=6"></script>
+<script src="js/steps.js?v=6"></script>
+<script src="js/photos.js?v=6"></script>
+<script src="js/finance.js?v=6"></script>
+<script src="js/settings.js?v=6"></script>
+<script src="js/weekly.js?v=6"></script>
+<script src="js/progress.js?v=6"></script>
+<script src="js/dashboard.js?v=6"></script>
+<script src="js/app.js?v=6"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
