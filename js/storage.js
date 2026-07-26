@@ -23,7 +23,8 @@ const Storage = {
     try {
       const raw = localStorage.getItem(key);
       if (raw === null) return fallback;
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return parsed === null || parsed === undefined ? fallback : parsed;
     } catch (e) {
       console.error('Storage.get error', key, e);
       return fallback;
@@ -63,13 +64,21 @@ const Storage = {
 
   getProfile() {
     const stored = this.get(this.KEYS.PROFILE, null);
-    if (!stored) {
+    if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
       const def = this.defaultProfile();
       this.set(this.KEYS.PROFILE, def);
       return def;
     }
     // Täienda puuduvad väljad vaikeväärtustega (nt. rakenduse esimene korras avamine).
-    return Object.assign(this.defaultProfile(), stored);
+    const defaults = this.defaultProfile();
+    return {
+      ...defaults,
+      ...stored,
+      macros: {
+        ...defaults.macros,
+        ...(stored.macros && typeof stored.macros === 'object' ? stored.macros : {}),
+      },
+    };
   },
 
   saveProfile(profile) {
