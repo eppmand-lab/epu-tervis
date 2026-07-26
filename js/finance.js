@@ -16,7 +16,7 @@ const Finance = {
   },
 
   defaultPlan() {
-    return { income: 0, fixedCosts: 0, invest: 0, extra: 0, buffer: 0, paydayDay: 5 };
+    return { income: 0, fixedCosts: 0, invest: 0, extra: 0, buffer: 0, paydayDay: 31 };
   },
 
   getPlans() {
@@ -187,7 +187,7 @@ const Finance = {
     const spent = this.spentInMonth(monthKey);
     const remainingFree = free - spent;
 
-    const paydayIso = this.nextPayday(todayIso, plan.paydayDay || 5);
+    const paydayIso = this.nextPayday(todayIso, plan.paydayDay || 31);
     const upcoming = this.upcomingRecurring(todayIso, paydayIso);
     const upcomingTotal = upcoming.reduce((s, u) => s + u.amount, 0);
 
@@ -291,7 +291,7 @@ const Finance = {
     const el = document.getElementById('finance-upcoming');
     const todayIso = DateUtils.todayISO();
     const plan = this.getPlan(this.todayMonthKey());
-    const paydayIso = this.nextPayday(todayIso, plan.paydayDay || 5);
+    const paydayIso = this.nextPayday(todayIso, plan.paydayDay || 31);
     const upcoming = this.upcomingRecurring(todayIso, paydayIso);
     if (!upcoming.length) {
       el.innerHTML = '<p class="hint">Ühtegi püsikulu ei ole plaanis enne palgapäeva.</p>';
@@ -390,6 +390,7 @@ const Finance = {
       el.innerHTML = '<p class="hint">Püsikulusid pole veel lisatud.</p>';
       return;
     }
+    const total = all.reduce((sum, recurring) => sum + (Number(recurring.amount) || 0), 0);
     el.innerHTML = all.map(r => `
       <div class="history-entry">
         <div class="he-top">
@@ -398,7 +399,12 @@ const Finance = {
         </div>
         <div class="he-sub">${this.fmt(r.amount)} € · iga kuu ${r.dayOfMonth}. kuupäev</div>
       </div>
-    `).join('');
+    `).join('') + `
+      <div class="recurring-total-row" aria-label="Püsikulud kokku">
+        <span>PÜSIKULUD KOKKU</span>
+        <strong>${this.fmt(total)} € / KUU</strong>
+      </div>
+    `;
     el.querySelectorAll('.he-remove').forEach(btn => {
       btn.addEventListener('click', () => { this.removeRecurring(btn.dataset.id); this.renderAll(); });
     });
@@ -573,7 +579,7 @@ const Finance = {
       invest: parseFloat(document.getElementById('fp-invest').value) || 0,
       extra: parseFloat(document.getElementById('fp-extra').value) || 0,
       buffer: parseFloat(document.getElementById('fp-buffer').value) || 0,
-      paydayDay: parseInt(document.getElementById('fp-payday').value, 10) || 5,
+      paydayDay: parseInt(document.getElementById('fp-payday').value, 10) || 31,
     };
     this.savePlan(monthKey, plan);
     this.renderAll();
@@ -637,7 +643,7 @@ const Finance = {
     document.getElementById('fp-invest').value = plan.invest || '';
     document.getElementById('fp-extra').value = plan.extra || '';
     document.getElementById('fp-buffer').value = plan.buffer || '';
-    document.getElementById('fp-payday').value = plan.paydayDay || 5;
+    document.getElementById('fp-payday').value = plan.paydayDay || 31;
   },
 
   _esc(s) {
