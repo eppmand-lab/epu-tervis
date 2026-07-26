@@ -4,6 +4,8 @@ const CloudSync = {
   OWNER_EMAIL: 'epp.mand@gmail.com',
   MARKER: 'epp35_cloud_initialized',
   REVISION_KEY: 'epp35_cloud_revision',
+  CLIENT_VERSION_KEY: 'epp35_sync_client_version',
+  CLIENT_VERSION: '17',
   PHOTO_BUCKET: 'epp-photos',
   ready: false,
   applyingRemote: false,
@@ -143,10 +145,11 @@ const CloudSync = {
 
     const initialized = localStorage.getItem(this.MARKER) === this.user.id;
     const localRevision = Number(localStorage.getItem(this.REVISION_KEY) || 0);
+    const needsClientMerge = localStorage.getItem(this.CLIENT_VERSION_KEY) !== this.CLIENT_VERSION;
     if (!remote) {
       await this.syncPhotos();
       await this.uploadState();
-    } else if (!initialized || !localRevision) {
+    } else if (!initialized || !localRevision || needsClientMerge) {
       await this.syncPhotos();
       const merged = this.mergeStates(remote.data || {}, this.localState());
       await this.applyRemote(merged);
@@ -160,6 +163,7 @@ const CloudSync = {
       await this.uploadState();
     }
     localStorage.setItem(this.MARKER, this.user.id);
+    localStorage.setItem(this.CLIENT_VERSION_KEY, this.CLIENT_VERSION);
   },
 
   async applyRemote(data) {
@@ -205,6 +209,7 @@ const CloudSync = {
       return;
     }
     this.syncing = true;
+    if (showToast) this.dirty = true;
     this.updateStatus('Sünkroniseerin…');
     try {
       if (photosChanged) await this.syncPhotos();
@@ -304,7 +309,7 @@ const CloudSync = {
   refreshVisibleView() {
     const active = document.querySelector('.tab-panel.active');
     const tabId = active?.id?.replace('tab-', '');
-    const refresh = window.App?.refreshers?.[tabId];
+    const refresh = typeof App !== 'undefined' ? App.refreshers?.[tabId] : null;
     if (refresh) refresh();
   },
 
@@ -342,6 +347,7 @@ const CloudSync = {
     this.user = null;
     localStorage.removeItem(this.MARKER);
     localStorage.removeItem(this.REVISION_KEY);
+    localStorage.removeItem(this.CLIENT_VERSION_KEY);
     location.reload();
   },
 };

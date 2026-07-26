@@ -41,7 +41,7 @@ const Storage = {
   set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-      if (window.CloudSync && CloudSync.ready && !CloudSync.applyingRemote) {
+      if (typeof CloudSync !== 'undefined' && CloudSync.ready && !CloudSync.applyingRemote) {
         CloudSync.queue(key === this.KEYS.PHOTOS);
       }
       return true;
