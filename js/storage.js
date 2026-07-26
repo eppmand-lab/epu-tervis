@@ -24,7 +24,14 @@ const Storage = {
       const raw = localStorage.getItem(key);
       if (raw === null) return fallback;
       const parsed = JSON.parse(raw);
-      return parsed === null || parsed === undefined ? fallback : parsed;
+      if (parsed === null || parsed === undefined) return fallback;
+      if (Array.isArray(fallback)) {
+        return Array.isArray(parsed) ? parsed.filter(item => item !== null && item !== undefined) : fallback;
+      }
+      if (fallback && typeof fallback === 'object') {
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : fallback;
+      }
+      return parsed;
     } catch (e) {
       console.error('Storage.get error', key, e);
       return fallback;

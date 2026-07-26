@@ -51,7 +51,7 @@ const GymPlans = {
   progressChart: null,
 
   getSessions() {
-    return Storage.get(Storage.KEYS.GYM_SESSIONS, []);
+    return Storage.get(Storage.KEYS.GYM_SESSIONS, []).filter(item => item && typeof item === 'object');
   },
 
   save(list) {

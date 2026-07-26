@@ -14,7 +14,7 @@ const Nutrition = {
 
   getDayEntries(iso) {
     const log = this.getLog();
-    return log[iso] || [];
+    return Array.isArray(log[iso]) ? log[iso].filter(entry => entry && typeof entry === 'object') : [];
   },
 
   addEntry(iso, entry) {

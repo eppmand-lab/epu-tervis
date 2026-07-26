@@ -33,7 +33,10 @@ const Cycle = {
       Storage.set(Storage.KEYS.CYCLE, def);
       return def;
     }
-    return data;
+    return {
+      cycleLength: Number(data.cycleLength) || 28,
+      periodStarts: Array.isArray(data.periodStarts) ? data.periodStarts.filter(Boolean) : [],
+    };
   },
 
   save(data) {

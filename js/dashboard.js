@@ -1,6 +1,20 @@
 const Dashboard = {
   sparkChart: null,
 
+  safeRender(label, renderFn, fallbackId) {
+    try {
+      renderFn();
+      return true;
+    } catch (error) {
+      console.error(`Dashboard ${label} render error`, error);
+      const el = fallbackId ? document.getElementById(fallbackId) : null;
+      if (el) {
+        el.innerHTML = `<div class="card"><strong>${label} ei saanud kuvada.</strong><p class="hint">Ülejäänud pealeht töötab edasi. Ava Seaded → Sünkroniseeri ja proovi uuesti.</p></div>`;
+      }
+      return false;
+    }
+  },
+
   renderDateRow() {
     const iso = DateUtils.todayISO();
     const now = new Date();
@@ -227,16 +241,18 @@ const Dashboard = {
 
   render() {
     this.renderDateRow();
-    this.renderDailyBrief();
-    this.renderQuickActions();
-    this.renderHeroEnergy();
-    this.renderHeroWeek();
-    this.renderSecondaryGrid();
-    this.renderCycleStrip();
-    this.renderMoneyStrip();
+    this.safeRender('Tänane fookus', () => this.renderDailyBrief(), 'daily-brief');
+    this.safeRender('Kiirvalikud', () => this.renderQuickActions(), 'dashboard-actions');
+    this.safeRender('Tänane kütus', () => this.renderHeroEnergy(), 'hero-kcal-target');
+    this.safeRender('Nädalagraafik', () => this.renderHeroWeek(), null);
+    this.safeRender('Päeva ülevaade', () => this.renderSecondaryGrid(), 'dashboard-secondary');
+    this.safeRender('Tsükli ülevaade', () => this.renderCycleStrip(), 'cycle-strip');
+    this.safeRender('Finantsülevaade', () => this.renderMoneyStrip(), 'money-strip');
 
-    WeeklyAnalysis.renderCard();
-    WeeklyAnalysis.maybeAutoGenerate().then(() => WeeklyAnalysis.renderCard());
+    this.safeRender('Nädalaraport', () => WeeklyAnalysis.renderCard(), 'weekly-analysis-card');
+    WeeklyAnalysis.maybeAutoGenerate()
+      .then(() => this.safeRender('Nädalaraport', () => WeeklyAnalysis.renderCard(), 'weekly-analysis-card'))
+      .catch(error => console.error('Weekly analysis error', error));
   },
 
   init() {

@@ -4,7 +4,7 @@ const Workouts = {
   restSeconds: 90,
 
   getAll() {
-    return Storage.get(Storage.KEYS.WORKOUTS, []);
+    return Storage.get(Storage.KEYS.WORKOUTS, []).filter(item => item && typeof item === 'object');
   },
 
   save(list) {
