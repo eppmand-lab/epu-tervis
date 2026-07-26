@@ -3,6 +3,7 @@ const CloudSync = {
   KEY: 'sb_publishable_Q39wb2IDL8KGtI5c4Ck8zA_88zESYpJ',
   OWNER_EMAIL: 'epp.mand@gmail.com',
   MARKER: 'epp35_cloud_initialized',
+  REVISION_KEY: 'epp35_cloud_revision',
   PHOTO_BUCKET: 'epp-photos',
   ready: false,
   applyingRemote: false,
@@ -10,6 +11,7 @@ const CloudSync = {
   user: null,
   timer: null,
   syncing: false,
+  dirty: false,
 
   async init() {
     if (!window.supabase?.createClient) {
@@ -89,6 +91,7 @@ const CloudSync = {
       return false;
     }
     this.ready = true;
+    this.startPullChecks();
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('auth-pending');
     this.updateStatus('Kõik andmed on sünkroniseeritud');
@@ -139,12 +142,20 @@ const CloudSync = {
     if (error) throw error;
 
     const initialized = localStorage.getItem(this.MARKER) === this.user.id;
+    const localRevision = Number(localStorage.getItem(this.REVISION_KEY) || 0);
     if (!remote) {
       await this.syncPhotos();
       await this.uploadState();
-    } else if (!initialized || !this.hasLocalData()) {
+    } else if (!initialized || !localRevision) {
+      await this.syncPhotos();
+      const merged = this.mergeStates(remote.data || {}, this.localState());
+      await this.applyRemote(merged);
+      this.dirty = true;
+      await this.uploadState();
+    } else if (Number(remote.revision || 0) > localRevision) {
       await this.applyRemote(remote.data || {});
-    } else {
+      localStorage.setItem(this.REVISION_KEY, String(remote.revision || 0));
+    } else if (localRevision > Number(remote.revision || 0)) {
       await this.syncPhotos();
       await this.uploadState();
     }
@@ -182,6 +193,7 @@ const CloudSync = {
   },
 
   queue(photosChanged = false) {
+    this.dirty = true;
     clearTimeout(this.timer);
     this.updateStatus('Muudatus ootab sünkroniseerimist…');
     this.timer = window.setTimeout(() => this.syncNow(false, photosChanged), photosChanged ? 900 : 500);
@@ -196,7 +208,25 @@ const CloudSync = {
     this.updateStatus('Sünkroniseerin…');
     try {
       if (photosChanged) await this.syncPhotos();
-      await this.uploadState();
+      const { data: remote, error: fetchError } = await this.client
+        .from('app_state')
+        .select('data, revision')
+        .eq('user_id', this.user.id)
+        .maybeSingle();
+      if (fetchError) throw fetchError;
+      const localRevision = Number(localStorage.getItem(this.REVISION_KEY) || 0);
+      const remoteRevision = Number(remote?.revision || 0);
+      if (remote && remoteRevision > localRevision) {
+        if (this.dirty) {
+          await this.applyRemote(this.mergeStates(remote.data || {}, this.localState()));
+          this.dirty = true;
+        } else {
+          await this.applyRemote(remote.data || {});
+          localStorage.setItem(this.REVISION_KEY, String(remoteRevision));
+          this.refreshVisibleView();
+        }
+      }
+      if (this.dirty || !remote) await this.uploadState();
       this.updateStatus(`Sünkroniseeritud ${new Date().toLocaleTimeString('et-EE', { hour: '2-digit', minute: '2-digit' })}`);
       if (showToast) UI.toast('Pilvesünkroniseerimine valmis');
     } catch (error) {
@@ -209,13 +239,73 @@ const CloudSync = {
   },
 
   async uploadState() {
+    const revision = Date.now();
     const payload = {
       user_id: this.user.id,
       data: this.localState(),
-      revision: Date.now(),
+      revision,
     };
     const { error } = await this.client.from('app_state').upsert(payload, { onConflict: 'user_id' });
     if (error) throw error;
+    localStorage.setItem(this.REVISION_KEY, String(revision));
+    this.dirty = false;
+  },
+
+  mergeStates(remote, local) {
+    const merged = { ...remote };
+    const arrayKeys = new Set([
+      Storage.KEYS.RECIPES,
+      Storage.KEYS.WORKOUTS,
+      Storage.KEYS.MEASUREMENTS,
+      Storage.KEYS.CYCLE,
+      Storage.KEYS.PHOTOS,
+      Storage.KEYS.GYM_SESSIONS,
+      Storage.KEYS.FINANCE_TRANSACTIONS,
+      Storage.KEYS.FINANCE_RECURRING,
+      Storage.KEYS.FINANCE_GOALS,
+    ]);
+
+    Object.values(Storage.KEYS).forEach(key => {
+      const remoteValue = remote[key];
+      const localValue = local[key];
+      if (arrayKeys.has(key)) {
+        const byIdentity = new Map();
+        [...(Array.isArray(remoteValue) ? remoteValue : []), ...(Array.isArray(localValue) ? localValue : [])]
+          .forEach(item => {
+            const identity = item?.id || `${item?.date || ''}:${item?.angle || ''}:${JSON.stringify(item)}`;
+            byIdentity.set(identity, item);
+          });
+        merged[key] = [...byIdentity.values()];
+      } else if (
+        remoteValue && localValue
+        && typeof remoteValue === 'object' && typeof localValue === 'object'
+        && !Array.isArray(remoteValue) && !Array.isArray(localValue)
+      ) {
+        merged[key] = { ...remoteValue, ...localValue };
+      } else if (localValue !== null && localValue !== undefined) {
+        merged[key] = localValue;
+      }
+    });
+    return merged;
+  },
+
+  startPullChecks() {
+    const pull = () => {
+      if (this.ready && !this.syncing && navigator.onLine) this.syncNow(false, false);
+    };
+    window.addEventListener('focus', pull);
+    window.addEventListener('online', pull);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') pull();
+    });
+    window.setInterval(pull, 30000);
+  },
+
+  refreshVisibleView() {
+    const active = document.querySelector('.tab-panel.active');
+    const tabId = active?.id?.replace('tab-', '');
+    const refresh = window.App?.refreshers?.[tabId];
+    if (refresh) refresh();
   },
 
   async syncPhotos() {
@@ -251,6 +341,7 @@ const CloudSync = {
     this.ready = false;
     this.user = null;
     localStorage.removeItem(this.MARKER);
+    localStorage.removeItem(this.REVISION_KEY);
     location.reload();
   },
 };
