@@ -593,6 +593,10 @@ input:focus, select:focus, textarea:focus {
 /* --- Photos --- */
 #photo-add-btn { margin-top: 10px; }
 .hint { font-size: 12px; color: var(--ink-muted); }
+.photo-angle-inputs {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin: 10px 0;
+}
 .photo-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .photo-date-group { grid-column: 1 / -1; }
 .photo-date-heading {
@@ -605,17 +609,39 @@ input:focus, select:focus, textarea:focus {
 .photo-tile img { width: 100%; height: 160px; object-fit: cover; display: block; }
 .photo-tile-body { padding: 8px; }
 .photo-tile-date { font-family: var(--font-label); font-weight: 700; letter-spacing: 0.03em; font-size: 12px; }
+.photo-angle-select {
+  display: block; width: 100%; margin-bottom: 6px; padding: 5px 7px;
+  background: var(--powder-blue); color: var(--espresso);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-label); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
 .photo-tile-note { font-size: 12px; color: var(--ink-muted); margin: 2px 0 6px; }
 .photo-tile-analysis { font-size: 12px; background: var(--porcelain); border: 1px solid var(--border); padding: 8px; margin-top: 6px; white-space: pre-wrap; }
 .photo-tile button { font-size: 11px; padding: 6px 8px; }
 .photo-tile-actions { display: flex; gap: 6px; }
 .photo-compare-controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.photo-comparison { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
-.photo-comparison img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
-.photo-compare-side { display: flex; flex-direction: column; gap: 6px; }
-.photo-compare-label {
+.photo-comparison-head {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px;
+}
+.photo-comparison-head span {
   padding: 7px; background: var(--espresso); color: var(--porcelain);
   font-family: var(--font-label); font-size: 11px; font-weight: 700; text-align: center;
+}
+.photo-comparison-angles { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.photo-comparison-angle { margin: 0; }
+.photo-angle-title {
+  padding: 5px 0; font-family: var(--font-label); font-size: 11px;
+  font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.photo-comparison-pair { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.photo-comparison-pair img {
+  display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover;
+}
+.photo-missing {
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 3 / 4; border: 1.5px dashed var(--border);
+  color: var(--ink-muted); font-size: 12px;
 }
 .photo-compare-duration {
   margin-top: 8px; padding: 8px; background: var(--powder-blue);
@@ -758,6 +784,7 @@ input.measurement-locked {
   .progress-summary { grid-template-columns: 1fr; }
   .recipe-save-row { flex-direction: column; }
   .photo-compare-controls { grid-template-columns: 1fr; }
+  .photo-angle-inputs { grid-template-columns: 1fr; }
   .weekly-insights { grid-template-columns: 1fr; }
   .gym-column-head { display: none; }
   .gym-ex-row { grid-template-columns: 1fr 82px 1fr; }
