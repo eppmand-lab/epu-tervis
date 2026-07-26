@@ -843,6 +843,52 @@ input.measurement-locked {
 }
 .toast.hidden { display: none; }
 
+/* --- Privaatne sisselogimine ja sünkroniseerimine --- */
+.auth-pending { visibility: hidden; }
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(217, 95, 36, 0.22), transparent 31%),
+    var(--aubergine-deep);
+}
+.auth-screen.hidden { display: none; }
+.auth-card {
+  width: min(100%, 430px);
+  padding: clamp(28px, 7vw, 48px);
+  border: 1.5px solid var(--espresso);
+  background: var(--surface);
+  box-shadow: 12px 12px 0 var(--tangerine);
+}
+.auth-card h1 {
+  margin: 4px 0 14px;
+  font-family: var(--font-display);
+  font-size: clamp(48px, 12vw, 78px);
+  line-height: 0.95;
+  color: var(--aubergine-deep);
+}
+.auth-kicker {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--tangerine);
+}
+.auth-card p { margin: 0 0 22px; color: var(--ink-muted); }
+.auth-card .btn { width: 100%; }
+.sync-status-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sync-status-row > div { flex: 1 1 210px; }
+.sync-status-row .hint { margin: 4px 0 0; }
+
 @media (min-width: 640px) {
   .tabbar { justify-content: center; }
   .subtabbar { justify-content: center; }
