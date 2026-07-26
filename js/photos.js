@@ -1,6 +1,11 @@
 const Photos = {
   MAX_DIM: 720,
   JPEG_QUALITY: 0.64,
+  ANGLES: [
+    { key: 'front', label: 'Eestvaade' },
+    { key: 'side', label: 'Külgvaade' },
+    { key: 'back', label: 'Tagantvaade' },
+  ],
 
   getAll() {
     return Storage.get(Storage.KEYS.PHOTOS, []);
@@ -27,6 +32,46 @@ const Photos = {
     if (idx === -1) return;
     all[idx] = Object.assign(all[idx], patch);
     this.save(all);
+  },
+
+  angleLabel(key) {
+    return this.ANGLES.find(angle => angle.key === key)?.label || 'Foto';
+  },
+
+  changeAngle(id, angle) {
+    const all = this.getAll();
+    const photo = all.find(item => item.id === id);
+    if (!photo) return;
+    const duplicate = all.some(item => item.id !== id && item.date === photo.date && item.angle === angle);
+    if (duplicate) {
+      UI.toast(`${this.angleLabel(angle)} on sellel kuupäeval juba olemas`);
+      this.renderAll();
+      return;
+    }
+    photo.angle = angle;
+    this.save(all);
+    this.renderAll();
+  },
+
+  migrateAngles() {
+    const all = this.getAll();
+    let changed = false;
+    const grouped = all.reduce((groups, photo) => {
+      if (!groups[photo.date]) groups[photo.date] = [];
+      groups[photo.date].push(photo);
+      return groups;
+    }, {});
+    Object.values(grouped).forEach(photos => {
+      const used = new Set(photos.map(photo => photo.angle).filter(Boolean));
+      const available = this.ANGLES.map(angle => angle.key).filter(key => !used.has(key));
+      photos.forEach(photo => {
+        if (!photo.angle) {
+          photo.angle = available.shift() || 'front';
+          changed = true;
+        }
+      });
+    });
+    if (changed) this.save(all);
   },
 
   // Resize + JPEG-tihenda, et localStorage'i maht püsiks mõistlik.
@@ -69,34 +114,36 @@ const Photos = {
   },
 
   async handleAdd() {
-    const input = document.getElementById('photo-input');
     const note = document.getElementById('photo-note').value.trim();
     const date = document.getElementById('photo-date').value || DateUtils.todayISO();
-    const files = Array.from(input.files || []);
-    if (!files.length) { UI.toast('Vali kõigepealt vähemalt üks foto'); return; }
-    if (files.length > 3) { UI.toast('Ühe kuupäeva kohta saab korraga valida kuni 3 fotot'); return; }
-    const existingCount = this.getAll().filter(photo => photo.date === date).length;
-    if (existingCount + files.length > 3) {
-      UI.toast(`Kuupäeval ${DateUtils.formatEt(date)} on juba ${existingCount} fotot. Kokku saab olla kuni 3.`);
+    const selected = this.ANGLES.map(angle => ({
+      ...angle,
+      input: document.getElementById(`photo-input-${angle.key}`),
+    })).filter(item => item.input.files?.[0]);
+    if (!selected.length) { UI.toast('Vali kõigepealt vähemalt üks foto'); return; }
+    const existingAngles = new Set(this.getAll().filter(photo => photo.date === date).map(photo => photo.angle));
+    const duplicate = selected.find(item => existingAngles.has(item.key));
+    if (duplicate) {
+      UI.toast(`${DateUtils.formatEt(date)} ${duplicate.label.toLowerCase()} on juba lisatud. Kustuta vana foto enne asendamist.`);
       return;
     }
-    UI.toast(`Töötlen ${files.length} ${files.length === 1 ? 'fotot' : 'fotot'}...`);
+    UI.toast(`Töötlen ${selected.length} ${selected.length === 1 ? 'fotot' : 'fotot'}...`);
     try {
-      const images = [];
-      for (const file of files) {
-        images.push(await this.resizeImage(file));
+      const processed = [];
+      for (const item of selected) {
+        processed.push({ angle: item.key, image: await this.resizeImage(item.input.files[0]) });
       }
       const all = this.getAll();
-      images.forEach(image => {
-        all.push({ id: Fmt.uid(), date, image, note, analysis: null });
+      processed.forEach(item => {
+        all.push({ id: Fmt.uid(), date, image: item.image, angle: item.angle, note, analysis: null });
       });
       all.sort((a, b) => a.date.localeCompare(b.date));
       const ok = this.save(all);
       if (ok) {
-        input.value = '';
+        selected.forEach(item => { item.input.value = ''; });
         document.getElementById('photo-note').value = '';
         this.renderAll();
-        UI.toast(`${images.length} ${images.length === 1 ? 'foto lisatud' : 'fotot lisatud'}`);
+        UI.toast(`${processed.length} ${processed.length === 1 ? 'foto lisatud' : 'fotot lisatud'}`);
       }
     } catch (e) {
       console.error(e);
@@ -130,7 +177,9 @@ const Photos = {
     const all = this.getAll();
     const idx = all.findIndex(p => p.id === id);
     const current = all[idx];
-    const previous = idx > 0 ? all[idx - 1] : null;
+    const previous = all
+      .filter(photo => photo.angle === current.angle && photo.date < current.date)
+      .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
 
     const btn = document.querySelector(`[data-analyze="${id}"]`);
     if (btn) { btn.disabled = true; btn.textContent = 'Analüüsin...'; }
@@ -138,7 +187,7 @@ const Photos = {
     try {
       const content = [];
       if (previous) {
-        content.push({ type: 'text', text: `Esimene pilt on varasem progressifoto (${previous.date}), teine on uus foto (${current.date}). Võrdle neid ja kirjelda lühidalt (3-4 lauset), milliseid nähtavaid muutuseid märkad (lihastoonus, kehahoid, üldmulje). Ole toetav ja konstruktiivne, väldi kaalu või kehakuju hindavaid kommentaare, keskendu treeningu edenemisele. Vasta eesti keeles.` });
+        content.push({ type: 'text', text: `Mõlemad pildid on sama vaatenurga (${this.angleLabel(current.angle)}) progressifotod. Esimene on varasem (${previous.date}), teine uuem (${current.date}). Võrdle neid ja kirjelda lühidalt (3-4 lauset), milliseid nähtavaid muutuseid märkad (lihastoonus, kehahoid, üldmulje). Ole toetav ja konstruktiivne, väldi kaalu või kehakuju hindavaid kommentaare, keskendu treeningu edenemisele. Vasta eesti keeles.` });
         content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: this._stripPrefix(previous.image) } });
         content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: this._stripPrefix(current.image) } });
       } else {
@@ -199,10 +248,13 @@ const Photos = {
           <span>${photos.length}/3 FOTOT</span>
         </div>
         <div class="photo-gallery">
-          ${photos.map(p => `
+          ${photos.sort((a, b) => this.ANGLES.findIndex(angle => angle.key === a.angle) - this.ANGLES.findIndex(angle => angle.key === b.angle)).map(p => `
             <div class="photo-tile">
               <img src="${p.image}" alt="Progressifoto ${p.date}">
               <div class="photo-tile-body">
+                <select class="photo-angle-select" data-angle-id="${p.id}" aria-label="Foto vaatenurk">
+                  ${this.ANGLES.map(angle => `<option value="${angle.key}" ${angle.key === p.angle ? 'selected' : ''}>${angle.label}</option>`).join('')}
+                </select>
                 ${p.note ? `<div class="photo-tile-note">${this._esc(p.note)}</div>` : ''}
                 <div class="photo-tile-actions">
                   <button class="btn btn-secondary" data-analyze="${p.id}">Analüüsi Claude'iga</button>
@@ -217,6 +269,9 @@ const Photos = {
     `).join('');
     el.querySelectorAll('[data-analyze]').forEach(btn => {
       btn.addEventListener('click', () => this.analyze(btn.dataset.analyze));
+    });
+    el.querySelectorAll('[data-angle-id]').forEach(select => {
+      select.addEventListener('change', () => this.changeAngle(select.dataset.angleId, select.value));
     });
     el.querySelectorAll('[data-delete]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -259,15 +314,25 @@ const Photos = {
     const afterPhotos = all.filter(p => p.date === afterSelect.value);
     const dayDifference = Math.abs(Math.round((new Date(`${afterSelect.value}T00:00:00`) - new Date(`${beforeSelect.value}T00:00:00`)) / 86400000));
     comparison.innerHTML = `
-      <div class="photo-comparison">
-        <div class="photo-compare-side">
-          <div class="photo-compare-label">ENNE · ${DateUtils.formatEt(beforeSelect.value)}</div>
-          ${beforePhotos.map((photo, index) => `<img src="${photo.image}" alt="Varasem progressifoto ${index + 1}">`).join('')}
-        </div>
-        <div class="photo-compare-side">
-          <div class="photo-compare-label">PÄRAST · ${DateUtils.formatEt(afterSelect.value)}</div>
-          ${afterPhotos.map((photo, index) => `<img src="${photo.image}" alt="Hilisem progressifoto ${index + 1}">`).join('')}
-        </div>
+      <div class="photo-comparison-head">
+        <span>ENNE · ${DateUtils.formatEt(beforeSelect.value)}</span>
+        <span>PÄRAST · ${DateUtils.formatEt(afterSelect.value)}</span>
+      </div>
+      <div class="photo-comparison-angles">
+        ${this.ANGLES.map(angle => {
+          const before = beforePhotos.find(photo => photo.angle === angle.key);
+          const after = afterPhotos.find(photo => photo.angle === angle.key);
+          if (!before && !after) return '';
+          return `
+            <section class="photo-comparison-angle">
+              <div class="photo-angle-title">${angle.label}</div>
+              <div class="photo-comparison-pair">
+                ${before ? `<img src="${before.image}" alt="Varasem ${angle.label.toLowerCase()}">` : '<div class="photo-missing">Foto puudub</div>'}
+                ${after ? `<img src="${after.image}" alt="Hilisem ${angle.label.toLowerCase()}">` : '<div class="photo-missing">Foto puudub</div>'}
+              </div>
+            </section>
+          `;
+        }).join('')}
       </div>
       <div class="photo-compare-duration">${dayDifference} PÄEVA VAHEL</div>
     `;
@@ -286,6 +351,7 @@ const Photos = {
   },
 
   init() {
+    this.migrateAngles();
     document.getElementById('photo-date').value = DateUtils.todayISO();
     document.getElementById('photo-add-btn').addEventListener('click', () => this.handleAdd());
     document.getElementById('photo-compare-before').addEventListener('change', () => this.renderComparison());
