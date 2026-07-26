@@ -82,5 +82,7 @@ const Settings = {
     document.getElementById('apikey-form').addEventListener('submit', (e) => this.handleApiKeySubmit(e));
     document.getElementById('export-data-btn').addEventListener('click', () => this.exportData());
     document.getElementById('reset-data-btn').addEventListener('click', () => this.resetData());
+    document.getElementById('sync-now-btn').addEventListener('click', () => CloudSync.syncNow(true));
+    document.getElementById('sign-out-btn').addEventListener('click', () => CloudSync.signOut());
   },
 };
