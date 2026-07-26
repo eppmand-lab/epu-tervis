@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/style.css?v=10">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"></script>
 </head>
@@ -304,12 +304,14 @@
       <header class="panel-header"><h1>Progressifotod</h1></header>
       <div class="card">
         <h2>Lisa foto</h2>
-        <div class="form-row">
-          <label>Kuupäev <input type="date" id="photo-date"></label>
-          <label>Fotod (kuni 3) <input type="file" id="photo-input" accept="image/*,.heic,.heif" multiple></label>
+        <label>Kuupäev <input type="date" id="photo-date"></label>
+        <div class="photo-angle-inputs">
+          <label>Eestvaade <input type="file" id="photo-input-front" accept="image/*,.heic,.heif"></label>
+          <label>Külgvaade <input type="file" id="photo-input-side" accept="image/*,.heic,.heif"></label>
+          <label>Tagantvaade <input type="file" id="photo-input-back" accept="image/*,.heic,.heif"></label>
         </div>
         <label>Märkus <input type="text" id="photo-note" placeholder="nt. Hommikul, tühja kõhuga"></label>
-        <button class="btn btn-primary" id="photo-add-btn">Lisa foto</button>
+        <button class="btn btn-primary" id="photo-add-btn">Lisa valitud fotod</button>
         <p class="hint" id="photo-storage-hint"></p>
       </div>
       <div class="card">
@@ -538,23 +540,23 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="js/storage.js?v=9"></script>
-<script src="js/utils.js?v=9"></script>
-<script src="js/charts.js?v=9"></script>
-<script src="js/nutrition.js?v=9"></script>
-<script src="js/workouts.js?v=9"></script>
-<script src="js/gymplans.js?v=9"></script>
-<script src="js/measurements.js?v=9"></script>
-<script src="js/cycle.js?v=9"></script>
-<script src="js/water.js?v=9"></script>
-<script src="js/steps.js?v=9"></script>
-<script src="js/photos.js?v=9"></script>
-<script src="js/finance.js?v=9"></script>
-<script src="js/settings.js?v=9"></script>
-<script src="js/weekly.js?v=9"></script>
-<script src="js/progress.js?v=9"></script>
-<script src="js/dashboard.js?v=9"></script>
-<script src="js/app.js?v=9"></script>
+<script src="js/storage.js?v=10"></script>
+<script src="js/utils.js?v=10"></script>
+<script src="js/charts.js?v=10"></script>
+<script src="js/nutrition.js?v=10"></script>
+<script src="js/workouts.js?v=10"></script>
+<script src="js/gymplans.js?v=10"></script>
+<script src="js/measurements.js?v=10"></script>
+<script src="js/cycle.js?v=10"></script>
+<script src="js/water.js?v=10"></script>
+<script src="js/steps.js?v=10"></script>
+<script src="js/photos.js?v=10"></script>
+<script src="js/finance.js?v=10"></script>
+<script src="js/settings.js?v=10"></script>
+<script src="js/weekly.js?v=10"></script>
+<script src="js/progress.js?v=10"></script>
+<script src="js/dashboard.js?v=10"></script>
+<script src="js/app.js?v=10"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
