@@ -27,9 +27,22 @@ const Finance = {
     Storage.set(Storage.KEYS.FINANCE_PLANS, plans);
   },
 
+  migratePaydayToMonthEnd() {
+    const plans = this.getPlans();
+    let changed = false;
+    Object.values(plans).forEach(plan => {
+      if (plan.paydayDay !== 31) {
+        plan.paydayDay = 31;
+        changed = true;
+      }
+    });
+    if (changed) this.savePlans(plans);
+  },
+
   getPlan(monthKey) {
     const plans = this.getPlans();
-    return plans[monthKey] || this.defaultPlan();
+    const plan = plans[monthKey] || this.defaultPlan();
+    return { ...plan, paydayDay: 31 };
   },
 
   savePlan(monthKey, plan) {
@@ -579,7 +592,7 @@ const Finance = {
       invest: parseFloat(document.getElementById('fp-invest').value) || 0,
       extra: parseFloat(document.getElementById('fp-extra').value) || 0,
       buffer: parseFloat(document.getElementById('fp-buffer').value) || 0,
-      paydayDay: parseInt(document.getElementById('fp-payday').value, 10) || 31,
+      paydayDay: 31,
     };
     this.savePlan(monthKey, plan);
     this.renderAll();
@@ -643,7 +656,9 @@ const Finance = {
     document.getElementById('fp-invest').value = plan.invest || '';
     document.getElementById('fp-extra').value = plan.extra || '';
     document.getElementById('fp-buffer').value = plan.buffer || '';
-    document.getElementById('fp-payday').value = plan.paydayDay || 31;
+    const paydayInput = document.getElementById('fp-payday');
+    paydayInput.value = 31;
+    paydayInput.disabled = true;
   },
 
   _esc(s) {
@@ -666,6 +681,7 @@ const Finance = {
 
   init() {
     document.getElementById('tx-date').value = DateUtils.todayISO();
+    this.migratePaydayToMonthEnd();
     this.loadPlanForm();
     document.getElementById('finance-plan-form').addEventListener('submit', (e) => this.handlePlanSubmit(e));
     document.getElementById('finance-tx-form').addEventListener('submit', (e) => this.handleTxSubmit(e));
