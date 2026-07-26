@@ -15,13 +15,28 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=12">
+<link rel="stylesheet" href="css/style.css?v=13">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<div class="app-shell">
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-kicker">PRIVAATNE RUUM</div>
+    <h1>EPP 3.5</h1>
+    <p id="auth-message">Sisesta oma e-post. Saadame sulle turvalise sisselogimislingi.</p>
+    <form id="auth-form" class="stacked-form">
+      <label>E-post
+        <input type="email" id="auth-email" autocomplete="email" required>
+      </label>
+      <button type="submit" class="btn btn-primary" id="auth-submit">SAADA SISSELOGIMISLINK</button>
+    </form>
+  </div>
+</div>
+
+<div class="app-shell auth-pending" id="app-shell">
 
   <div class="brandbar theme-body">
     <span class="brand-mark">EPP 3.5</span>
@@ -526,8 +541,19 @@
         </form>
       </div>
       <div class="card">
+        <h2>Pilvesünkroniseerimine</h2>
+        <div class="sync-status-row">
+          <div>
+            <strong id="sync-account">Pole sisse logitud</strong>
+            <p class="hint" id="sync-status">Ootan ühendust…</p>
+          </div>
+          <button class="btn btn-ghost" id="sync-now-btn">Sünkroniseeri</button>
+          <button class="btn btn-ghost danger" id="sign-out-btn">Logi välja</button>
+        </div>
+      </div>
+      <div class="card">
         <h2>Andmete haldus</h2>
-        <p class="hint">Kõik andmed hoitakse ainult sinu brauseris (localStorage). Ekspordi need aeg-ajalt varukoopiaks.</p>
+        <p class="hint">Andmed salvestatakse selles brauseris ja sünkroniseeritakse sinu privaatsesse pilveruumi. JSON-eksport jääb täiendavaks varukoopiaks.</p>
         <div class="btn-row">
           <button class="btn btn-secondary" id="export-data-btn">Ekspordi andmed (JSON)</button>
           <button class="btn btn-ghost danger" id="reset-data-btn">Lähtesta kõik andmed</button>
@@ -540,23 +566,24 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="js/storage.js?v=12"></script>
-<script src="js/utils.js?v=12"></script>
-<script src="js/charts.js?v=12"></script>
-<script src="js/nutrition.js?v=12"></script>
-<script src="js/workouts.js?v=12"></script>
-<script src="js/gymplans.js?v=12"></script>
-<script src="js/measurements.js?v=12"></script>
-<script src="js/cycle.js?v=12"></script>
-<script src="js/water.js?v=12"></script>
-<script src="js/steps.js?v=12"></script>
-<script src="js/photos.js?v=12"></script>
-<script src="js/finance.js?v=12"></script>
-<script src="js/settings.js?v=12"></script>
-<script src="js/weekly.js?v=12"></script>
-<script src="js/progress.js?v=12"></script>
-<script src="js/dashboard.js?v=12"></script>
-<script src="js/app.js?v=12"></script>
+<script src="js/storage.js?v=13"></script>
+<script src="js/utils.js?v=13"></script>
+<script src="js/charts.js?v=13"></script>
+<script src="js/nutrition.js?v=13"></script>
+<script src="js/workouts.js?v=13"></script>
+<script src="js/gymplans.js?v=13"></script>
+<script src="js/measurements.js?v=13"></script>
+<script src="js/cycle.js?v=13"></script>
+<script src="js/water.js?v=13"></script>
+<script src="js/steps.js?v=13"></script>
+<script src="js/photos.js?v=13"></script>
+<script src="js/finance.js?v=13"></script>
+<script src="js/settings.js?v=13"></script>
+<script src="js/weekly.js?v=13"></script>
+<script src="js/progress.js?v=13"></script>
+<script src="js/dashboard.js?v=13"></script>
+<script src="js/sync.js?v=13"></script>
+<script src="js/app.js?v=13"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
