@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>EPP 3.5</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4B294F">
+<meta name="theme-color" content="#F7F3EC">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=17">
+<link rel="stylesheet" href="css/v2.css?v=1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -38,61 +39,93 @@
 
 <div class="app-shell auth-pending" id="app-shell">
 
-  <div class="brandbar theme-body">
-    <span class="brand-mark">EPP 3.5</span>
-  </div>
-  <nav class="tabbar theme-body" id="tabbar">
-    <button class="tab-btn active" data-group="today" data-tab="dashboard">TÄNA</button>
-    <button class="tab-btn" data-group="nutrition" data-tab="nutrition">TOITUMINE</button>
-    <button class="tab-btn" data-group="movement" data-tab="workouts">LIIKUMINE</button>
-    <button class="tab-btn" data-group="body" data-tab="measurements">KEHA</button>
-    <button class="tab-btn" data-group="progress" data-tab="progress">PROGRESS</button>
-    <button class="tab-btn" data-group="finance" data-tab="finance">FINANTSID</button>
-    <button class="tab-btn" data-group="settings" data-tab="settings">SEADED</button>
+  <header class="v2-topbar brandbar theme-body">
+    <div class="v2-brand">Epp <span>3.5</span></div>
+    <button class="v2-avatar" type="button" data-nav-direct="settings" aria-label="Ava seaded">E</button>
+  </header>
+
+  <nav class="tabbar theme-body v2-hidden-tabbar" id="tabbar" aria-label="Peamenüü">
+    <button class="tab-btn active" data-group="today" data-tab="dashboard">Home</button>
+    <button class="tab-btn" data-group="nutrition" data-tab="nutrition">Nutrition</button>
+    <button class="tab-btn" data-group="movement" data-tab="workouts">Training</button>
+    <button class="tab-btn" data-group="body" data-tab="measurements">Body</button>
+    <button class="tab-btn" data-group="progress" data-tab="progress">Insights</button>
+    <button class="tab-btn" data-group="finance" data-tab="finance">Finance</button>
+    <button class="tab-btn" data-group="settings" data-tab="settings">Settings</button>
   </nav>
   <nav class="subtabbar hidden" id="subtabbar" aria-label="Alamvaated"></nav>
 
   <main class="content">
 
-    <section id="tab-dashboard" class="tab-panel active">
-      <div class="date-row">
-        <span id="dashboard-date"></span>
+    <section id="tab-dashboard" class="tab-panel active v2-dashboard">
+      <div class="v2-home-head">
+        <div>
+          <div class="v2-eyebrow" id="dashboard-date"></div>
+          <h1 id="dashboard-greeting">Tere, Epp</h1>
+        </div>
+        <div class="v2-status-pill"><span></span><b id="dashboard-status">ON TRACK</b></div>
       </div>
 
       <div id="daily-brief"></div>
+
+      <div class="v2-section-head">
+        <div><span class="v2-eyebrow">TODAY</span><h2>Sinu päev ühe pilguga</h2></div>
+        <button class="v2-text-btn" type="button" data-nav-direct="progress">Vaata insights →</button>
+      </div>
+
+      <div class="v2-metric-grid" id="dashboard-secondary"></div>
+
+      <div class="v2-wide-grid">
+        <article class="v2-card v2-nutrition-card">
+          <div class="v2-card-top"><span class="v2-icon-badge">N</span><span class="v2-card-label">NUTRITION</span><button data-nav-direct="nutrition">→</button></div>
+          <div class="v2-nutrition-main">
+            <div>
+              <div class="v2-big-value" id="hero-kcal-value">0</div>
+              <div class="v2-value-sub" id="hero-kcal-target">/ 0 kcal</div>
+            </div>
+            <div class="v2-ring" id="hero-kcal-ring"><span id="hero-kcal-percent">0%</span></div>
+          </div>
+          <div class="v2-progress-track"><div id="hero-kcal-fill"></div></div>
+          <div class="v2-macro-line" id="dashboard-macros"></div>
+        </article>
+
+        <article class="v2-card v2-training-card">
+          <div class="v2-card-top"><span class="v2-icon-badge">T</span><span class="v2-card-label">TRAINING</span><button data-nav-direct="workouts">→</button></div>
+          <div class="v2-big-value" id="dashboard-training-count">0</div>
+          <div class="v2-value-sub">treeningut sel nädalal</div>
+          <div class="v2-training-note" id="dashboard-last-workout">Viimast treeningut pole veel logitud</div>
+        </article>
+      </div>
+
+      <article class="v2-card v2-finance-card">
+        <div class="v2-card-top"><span class="v2-icon-badge">€</span><span class="v2-card-label">FINANCE</span><button data-nav-direct="finance">→</button></div>
+        <div class="v2-finance-row">
+          <div><div class="v2-big-value" id="dashboard-safe-spend">€0</div><div class="v2-value-sub">safe to spend / päev</div></div>
+          <div class="v2-finance-days"><strong id="dashboard-payday-days">0</strong><span>päeva palgapäevani</span></div>
+        </div>
+      </article>
+
       <div class="quick-actions" id="dashboard-actions"></div>
 
-      <div class="hero-row">
-        <div class="hero-energy">
-          <div class="tile-label">TÄNANE KÜTUS</div>
-          <div class="hero-number" id="hero-kcal-value">0</div>
-          <div class="hero-sub" id="hero-kcal-target">/ 0 KCAL</div>
-          <div class="hero-bar-track"><div class="hero-bar-fill" id="hero-kcal-fill"></div></div>
+      <div class="v2-utility-row">
+        <div class="cycle-strip" id="steps-backfill-strip">
+          <span>Sammud teistel päevadel?</span>
+          <a href="#" class="cycle-strip-link" id="steps-backfill-toggle">Lisa →</a>
         </div>
-        <div class="hero-week">
-          <div class="tile-label">NÄDAL <span id="hero-week-num"></span></div>
-          <div class="chart-wrap hero-spark-wrap"><canvas id="chart-week-spark"></canvas></div>
+        <div class="card hidden" id="steps-backfill-form">
+          <div class="form-row">
+            <label>Kuupäev <input type="date" id="steps-backfill-date"></label>
+            <label>Sammud <input type="number" id="steps-backfill-value" placeholder="0"></label>
+          </div>
+          <button class="btn btn-secondary" id="steps-backfill-save">Salvesta</button>
         </div>
+        <div class="cycle-strip" id="cycle-strip"></div>
+        <div class="cycle-strip money-strip" id="money-strip"></div>
       </div>
 
-      <div class="secondary-grid" id="dashboard-secondary"></div>
-
-      <div class="cycle-strip" id="steps-backfill-strip">
-        <span>SAMMUD TEISTEL PÄEVADEL?</span>
-        <a href="#" class="cycle-strip-link" id="steps-backfill-toggle">LISA →</a>
+      <div class="v2-week-chart-hidden" aria-hidden="true">
+        <span id="hero-week-num"></span><canvas id="chart-week-spark"></canvas>
       </div>
-      <div class="card hidden" id="steps-backfill-form">
-        <div class="form-row">
-          <label>Kuupäev <input type="date" id="steps-backfill-date"></label>
-          <label>Sammud <input type="number" id="steps-backfill-value" placeholder="0"></label>
-        </div>
-        <button class="btn btn-secondary" id="steps-backfill-save">SALVESTA</button>
-      </div>
-
-      <div class="cycle-strip" id="cycle-strip"></div>
-
-      <div class="cycle-strip money-strip" id="money-strip"></div>
-
       <div id="weekly-analysis-card"></div>
     </section>
 
@@ -562,6 +595,30 @@
     </section>
 
   </main>
+
+  <nav class="v2-bottom-nav" aria-label="Põhinavigatsioon">
+    <button class="v2-nav-btn active" data-v2-tab="dashboard"><span>⌂</span><small>Home</small></button>
+    <button class="v2-nav-btn" data-v2-tab="progress"><span>✦</span><small>Insights</small></button>
+    <button class="v2-nav-add" data-v2-tab="workouts" aria-label="Lisa uus kirje">+</button>
+    <button class="v2-nav-btn" data-v2-tab="settings"><span>◎</span><small>Goals</small></button>
+    <button class="v2-nav-btn" id="v2-more-btn"><span>•••</span><small>More</small></button>
+  </nav>
+
+  <div class="v2-more-sheet hidden" id="v2-more-sheet">
+    <button class="v2-sheet-backdrop" id="v2-more-close" aria-label="Sulge"></button>
+    <div class="v2-sheet-panel">
+      <div class="v2-sheet-handle"></div>
+      <h2>More</h2>
+      <div class="v2-sheet-grid">
+        <button data-v2-tab="nutrition">Nutrition</button>
+        <button data-v2-tab="workouts">Activity & Training</button>
+        <button data-v2-tab="measurements">Body</button>
+        <button data-v2-tab="finance">Finance</button>
+        <button data-v2-tab="photos">Progress photos</button>
+        <button data-v2-tab="settings">Settings</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="toast" class="toast hidden"></div>
@@ -584,6 +641,7 @@
 <script src="js/dashboard.js?v=17"></script>
 <script src="js/sync.js?v=17"></script>
 <script src="js/app.js?v=17"></script>
+<script src="js/v2.js?v=1"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
