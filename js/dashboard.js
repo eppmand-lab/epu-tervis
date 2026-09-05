@@ -185,16 +185,7 @@ const distanceKm = health?.distance_km ?? null;
       tile.addEventListener('click', () => App.showTab(tile.dataset.nav));
     });
 
-    const stepsInput = document.getElementById('dash-steps-input');
-    document.getElementById('dash-steps-tile').addEventListener('click', (e) => {
-      if (e.target !== stepsInput) stepsInput.focus();
-    });
-    stepsInput.addEventListener('click', (e) => e.stopPropagation());
-    stepsInput.addEventListener('change', () => {
-      const val = parseInt(stepsInput.value, 10) || 0;
-      Steps.save(iso, val);
-      UI.toast('Sammud salvestatud');
-    });
+  
   },
 
   initStepsBackfill() {
