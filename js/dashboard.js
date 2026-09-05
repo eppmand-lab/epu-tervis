@@ -149,10 +149,13 @@ const Dashboard = {
     const health = await CloudSync.getHealthDaily(iso);
 const steps = health?.steps ?? Steps.getAmount(iso);
 const distanceKm = health?.distance_km ?? null;
-    const stepsTile = `
+      const stepsTile = `
       <div class="sec-tile sec-plain" id="dash-steps-tile">
-        <div class="tile-label">SAMMUD</div>
-        <input type="number" id="dash-steps-input" class="sec-tile-value dash-steps-input" value="${steps || ''}" placeholder="0000">
+        <div class="tile-label">AKTIIVSUS</div>
+        <div class="sec-tile-value">${Fmt.int(steps)}</div>
+        <div class="sec-tile-sub">
+          SAMMU${distanceKm !== null ? ` · ${Number(distanceKm).toFixed(2)} KM` : ''}
+        </div>
       </div>
     `;
 
