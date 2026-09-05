@@ -345,7 +345,16 @@ async getHealthDaily(date) {
 
     const { data, error } = await this.client
       .from('health_daily')
-      .select('date, steps, distance_km')
+      .select(`
+  date,
+  steps,
+  distance_km,
+  dietary_energy_kcal,
+  protein_g,
+  carbohydrates_g,
+  total_fat_g,
+  fiber_g
+`)
       .eq('date', date)
       .maybeSingle();
 
