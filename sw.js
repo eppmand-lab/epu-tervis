@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'epu-tervis-v17';
+const CACHE_VERSION = 'epu-tervis-v18';
 
 const PRECACHE_URLS = [
   './',
