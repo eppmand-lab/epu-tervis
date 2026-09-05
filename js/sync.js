@@ -340,7 +340,22 @@ const CloudSync = {
       reader.readAsDataURL(blob);
     });
   },
+async getHealthDaily(date) {
+    if (!this.client || !this.user) return null;
 
+    const { data, error } = await this.client
+      .from('health_daily')
+      .select('date, steps, distance_km')
+      .eq('date', date)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Health daily fetch failed', error);
+      return null;
+    }
+
+    return data || null;
+  },
   async signOut() {
     await this.client.auth.signOut();
     this.ready = false;
