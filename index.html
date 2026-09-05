@@ -130,47 +130,26 @@
     </section>
 
     <section id="tab-nutrition" class="tab-panel">
-      <header class="panel-header"><h1>TOITUMISPÄEVIK</h1></header>
+      <header class="panel-header">
+        <h1>TOITUMISPÄEVIK</h1>
+      </header>
+
       <div class="card">
-        <label>Kuupäev <input type="date" id="nutrition-date"></label>
-        <div class="macro-summary" id="macro-summary"></div>
-        <div class="btn-row nutrition-day-actions">
-          <button class="btn btn-ghost" id="copy-previous-day">Kopeeri eelmine päev</button>
-        </div>
-      </div>
-      <div class="card">
-        <h2>Lisa toit</h2>
-        <label>Söögikord
-          <select id="food-meal-select">
-            <option value="hommik">Hommikusöök</option>
-            <option value="lounasook">Lõunasöök</option>
-            <option value="ohtu">Õhtusöök</option>
-            <option value="snakk">Snäkk</option>
-          </select>
+        <label>
+          Kuupäev
+          <input type="date" id="nutrition-date">
         </label>
-        <div class="search-row">
-          <input type="text" id="food-search-input" placeholder="Otsi toitu (nt. kaerahelbed)...">
-          <button class="btn btn-secondary" id="food-search-btn">Otsi</button>
-        </div>
-        <div id="food-search-results" class="search-results"></div>
-        <div id="manual-food-form" class="manual-food-form hidden"></div>
+
+        <div class="macro-summary" id="macro-summary"></div>
       </div>
+
       <div class="card">
-        <h2>Sagedased toidud</h2>
-        <p class="hint">Lisa oma enim kasutatud toit ühe puudutusega samas koguses ja valitud söögikorra alla.</p>
-        <div class="quick-foods" id="frequent-foods"></div>
-      </div>
-      <div class="card">
-        <h2>Minu retseptid</h2>
-        <p class="hint">Salvesta valitud söögikorra kõik toidud üheks retseptiks ja lisa see hiljem ühe puudutusega.</p>
-        <div class="recipe-save-row">
-          <input type="text" id="recipe-name" placeholder="Retsepti nimi">
-          <button class="btn btn-secondary" id="recipe-save-btn">Salvesta valitud söögikord</button>
-        </div>
-        <div class="recipe-list" id="recipe-list"></div>
-      </div>
-      <div class="card">
-        <h2>Päevik</h2>
+        <div class="tile-label">ANDMEALLIKAS</div>
+        <h2>FATSECRET · APPLE HEALTH</h2>
+        <p class="hint">
+          Päeva kalorid ja makrod sünkroniseeritakse automaatselt
+          FatSecretist Apple Healthi kaudu.
+        </p>
         <div id="food-log-list"></div>
       </div>
     </section>
