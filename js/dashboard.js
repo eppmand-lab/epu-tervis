@@ -146,7 +146,9 @@ const Dashboard = {
     const waterAmount = Water.getAmount(iso);
     const waterTile = this.secTile('sec-blue', 'VESI', `${waterAmount}`, `/ ${profile.waterTarget} ML`, 'water');
 
-    const steps = Steps.getAmount(iso);
+    const health = await CloudSync.getHealthDaily(iso);
+const steps = health?.steps ?? Steps.getAmount(iso);
+const distanceKm = health?.distance_km ?? null;
     const stepsTile = `
       <div class="sec-tile sec-plain" id="dash-steps-tile">
         <div class="tile-label">SAMMUD</div>
