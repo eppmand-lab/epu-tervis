@@ -139,7 +139,7 @@ const Dashboard = {
     `;
   },
 
-  renderSecondaryGrid() {
+  async renderSecondaryGrid() {
     const iso = DateUtils.todayISO();
     const profile = Storage.getProfile();
 
