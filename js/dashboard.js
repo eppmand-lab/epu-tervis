@@ -23,10 +23,13 @@ const Dashboard = {
       `${DateUtils.formatEt(iso).toUpperCase()} / ${DateUtils.weekdayFullEt(iso)} · ${time}`;
   },
 
-  renderHeroEnergy() {
-    const iso = DateUtils.todayISO();
-    const profile = Storage.getProfile();
-    const totals = Nutrition.dayTotals(iso);
+  async renderHeroEnergy() {
+  const iso = DateUtils.todayISO();
+
+  await Nutrition.loadDay(iso);
+
+  const profile = Storage.getProfile();
+  const totals = Nutrition.dayTotals(iso);
     const pct = profile.macros.kcal
       ? Math.min(100, (totals.kcal / profile.macros.kcal) * 100)
       : 0;
@@ -37,10 +40,13 @@ const Dashboard = {
     document.getElementById('hero-kcal-fill').style.width = `${pct}%`;
   },
 
-  dailyGuidance() {
-    const iso = DateUtils.todayISO();
-    const profile = Storage.getProfile();
-    const totals = Nutrition.dayTotals(iso);
+  async dailyGuidance() {
+  const iso = DateUtils.todayISO();
+
+  await Nutrition.loadDay(iso);
+
+  const profile = Storage.getProfile();
+  const totals = Nutrition.dayTotals(iso);
     const water = Water.getAmount(iso);
     const steps = Steps.getAmount(iso);
 
@@ -92,9 +98,9 @@ const Dashboard = {
     };
   },
 
-  renderDailyBrief() {
-    const el = document.getElementById('daily-brief');
-    const guidance = this.dailyGuidance();
+  async renderDailyBrief() {
+  const el = document.getElementById('daily-brief');
+  const guidance = await this.dailyGuidance();
 
     el.innerHTML = `
       <div class="daily-brief-card">
