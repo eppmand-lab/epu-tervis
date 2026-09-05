@@ -16,10 +16,13 @@ const Dashboard = {
     if (greeting) greeting.textContent = this.greeting();
   },
 
-  renderHeroEnergy() {
-    const iso = DateUtils.todayISO();
-    const profile = Storage.getProfile();
-    const totals = Nutrition.dayTotals(iso);
+ async renderHeroEnergy() {
+  const iso = DateUtils.todayISO();
+
+  await Nutrition.loadDay(iso);
+
+  const profile = Storage.getProfile();
+  const totals = Nutrition.dayTotals(iso);
     const pct = profile.macros.kcal ? Math.min(100, (totals.kcal / profile.macros.kcal) * 100) : 0;
     document.getElementById('hero-kcal-value').textContent = Fmt.int(totals.kcal);
     document.getElementById('hero-kcal-target').textContent = `/ ${Fmt.int(profile.macros.kcal)} kcal`;
@@ -37,10 +40,13 @@ const Dashboard = {
     }
   },
 
-  dailyGuidance() {
-    const iso = DateUtils.todayISO();
-    const profile = Storage.getProfile();
-    const totals = Nutrition.dayTotals(iso);
+  async dailyGuidance() {
+  const iso = DateUtils.todayISO();
+
+  await Nutrition.loadDay(iso);
+
+  const profile = Storage.getProfile();
+  const totals = Nutrition.dayTotals(iso);
     const water = Water.getAmount(iso);
     const steps = Steps.getAmount(iso);
     const todayWorkouts = Workouts.getAll().filter(w => w.date === iso).length
@@ -75,9 +81,9 @@ const Dashboard = {
     return { headline, message, onTrack };
   },
 
-  renderDailyBrief() {
-    const el = document.getElementById('daily-brief');
-    const guidance = this.dailyGuidance();
+  async renderDailyBrief() {
+  const el = document.getElementById('daily-brief');
+  const guidance = await this.dailyGuidance();
     el.innerHTML = `
       <div class="daily-brief-card">
         <div class="tile-label">EPP INSIGHT</div>
@@ -91,7 +97,7 @@ const Dashboard = {
 
   renderQuickActions() {
     const actions = [
-      { tab: 'nutrition', label: '+ Lisa toit' },
+      { tab: 'nutrition', label: 'Vaata toitumist' },
       { tab: 'water', label: '+ Lisa vesi' },
       { tab: 'workouts', label: '+ Logi trenn' },
       { tab: 'measurements', label: '+ Mõõtmine' },
