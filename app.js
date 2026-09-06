@@ -1,10 +1,7 @@
 const App = {
   GROUPS: {
     today: [{ tab: 'dashboard', label: 'Täna' }],
-    nutrition: [
-      { tab: 'nutrition', label: 'Toit' },
-      { tab: 'water', label: 'Vesi' },
-    ],
+    nutrition: [{ tab: 'nutrition', label: 'Toit' }],
     movement: [
       { tab: 'workouts', label: 'Treeninglogi' },
       { tab: 'gymplans', label: 'Jõusaalikavad' },
@@ -22,7 +19,7 @@ const App = {
   TAB_THEMES: {
     dashboard: 'body',
     nutrition: 'body', workouts: 'body', gymplans: 'body', measurements: 'body',
-    cycle: 'body', water: 'body', photos: 'body',
+    cycle: 'body', photos: 'body',
     progress: 'body',
     finance: 'money',
     settings: 'body',
@@ -35,7 +32,6 @@ const App = {
     gymplans: () => GymPlans.renderAll(),
     measurements: () => Measurements.renderAll(),
     cycle: () => Cycle.renderAll(),
-    water: () => Water.renderAll(),
     photos: () => Photos.renderAll(),
     progress: () => Progress.renderAll(),
     finance: () => Finance.renderAll(),
@@ -101,7 +97,6 @@ const App = {
     GymPlans.init();
     Measurements.init();
     Cycle.init();
-    Water.init();
     Photos.init();
     Progress.init();
     Finance.init();

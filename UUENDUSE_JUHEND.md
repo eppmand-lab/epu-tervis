@@ -1,4 +1,4 @@
-# Epp 3.5 — v23 uuenduse juhend
+# Epp 3.5 — v26 uuenduse juhend
 
 ## GitHubi üleslaadimine
 
@@ -20,10 +20,14 @@
 - Eesmärgid on 1972 kcal, 147 g valku, 55 g rasva ja 222 g süsivesikuid; vana salvestatud eesmärk uuendatakse ühe korra.
 - Progressi 7 päeva toitumine ja sammud kasutavad Supabase'i andmeid, lokaalsed sammud on ainult varuvariant.
 - Pealehe raport eemaldati.
+- Vee logimise kasutajaliides eemaldati; vana salvestatud veeajalugu jäi alles.
+- Pealehe „Viimane trenn“ ja nädala treeningute arv arvestavad nii treeninglogi kui jõusaalikavade seansse.
+- Pealehe käsitsi sammude tagantjärele lisamine ja tsükliriba eemaldati.
+- Alumise menüü Goals asendati Finance nupuga ning Trainingu alamvalikute kontrast parandati.
 - Jõusaalis on neli uut kava.
-- Kõik vaated kasutavad pealehega sama kaardi-, vormi- ja nupustiili.
+- Kõik vaated kasutavad referentsiga sama Playfair Display + Inter fondipaari, sooja helehalli tausta, valgeid kaarte, tumedat teksti ning rohelist-mündist aktsendipaletti.
 - Finantsides saab LHV väljaminevaid tehinguid importida, kategooriaid muuta ning vähemalt kaks kulu nimetatud grupiks ühendada.
-- Rakenduse cache-versioon on `v23` ja koodifailidele kasutatakse network-first laadimist.
+- Rakenduse cache-versioon on `v26` ja koodifailidele kasutatakse network-first laadimist.
 
 ## LHV.ai ühendus
 

@@ -56,7 +56,6 @@ const Dashboard = {
     const health = await CloudSync.getHealthDaily(iso);
     const profile = Storage.getProfile();
     const totals = Nutrition.dayTotals(iso);
-    const water = Water.getAmount(iso);
     const steps = health?.steps ?? Steps.getAmount(iso);
 
     const todayWorkouts =
@@ -85,10 +84,6 @@ const Dashboard = {
       headline = 'VALK VAJAB TÄHELEPANU.';
       message =
         `Valgueesmärgist on puudu ${proteinLeft} g. Planeeri järgmine toidukord selle ümber.`;
-    } else if (water < profile.waterTarget * 0.6) {
-      headline = 'VESI ON TÄNA MAHA JÄÄNUD.';
-      message =
-        `Eesmärgini on ${Math.max(0, profile.waterTarget - water)} ml. Lisa järgmine klaas kohe.`;
     } else if (!todayWorkouts && steps < 8000) {
       headline = 'LIIKUMISEKS ON VEEL RUUMI.';
       message =
@@ -123,7 +118,7 @@ const Dashboard = {
   renderQuickActions() {
     const actions = [
       { tab: 'nutrition', label: 'Vaata toitumist' },
-      { tab: 'water', label: '+ Lisa vesi' },
+      { tab: 'gymplans', label: 'Jõusaalikava' },
       { tab: 'workouts', label: '+ Logi trenn' },
       { tab: 'measurements', label: 'Mõõtmised' },
     ];
@@ -167,11 +162,11 @@ const Dashboard = {
 
         datasets: [{
           data: values,
-          borderColor: '#A91D3A',
-          backgroundColor: '#A91D3A',
+          borderColor: '#25B77B',
+          backgroundColor: '#25B77B',
           borderWidth: 2,
           pointRadius: 3,
-          pointBackgroundColor: '#A91D3A',
+          pointBackgroundColor: '#25B77B',
           tension: 0.3,
           fill: false,
         }],
@@ -217,16 +212,6 @@ const Dashboard = {
     const iso = DateUtils.todayISO();
     const profile = Storage.getProfile();
 
-    const waterAmount = Water.getAmount(iso);
-
-    const waterTile = this.secTile(
-      'sec-blue',
-      'VESI',
-      `${waterAmount}`,
-      `/ ${profile.waterTarget} ML`,
-      'water'
-    );
-
     // Apple Health / Supabase
     // Kui Health-andmeid ei ole, kasutame varuvariandina
     // äpi lokaalselt salvestatud sammude väärtust.
@@ -267,11 +252,10 @@ const Dashboard = {
       'measurements'
     );
 
-    const workouts = Workouts.getAll();
-
-    const lastWorkout = workouts
-      .slice()
-      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    const lastWorkout = [
+      ...Workouts.getAll().map(workout => ({ date: workout.date, type: workout.type || 'Treening' })),
+      ...GymPlans.getSessions().map(session => ({ date: session.date, type: session.programLabel || 'Jõusaal' })),
+    ].sort((a, b) => b.date.localeCompare(a.date))[0];
 
     const lastWorkoutTile = this.secTile(
       'sec-oxblood',
@@ -288,7 +272,6 @@ const Dashboard = {
     const el = document.getElementById('dashboard-secondary');
 
     el.innerHTML =
-      waterTile +
       stepsTile +
       weightTile +
       lastWorkoutTile;
@@ -301,108 +284,27 @@ const Dashboard = {
     });
   },
 
-  initStepsBackfill() {
-    const toggle =
-      document.getElementById('steps-backfill-toggle');
-
-    const form =
-      document.getElementById('steps-backfill-form');
-
-    const dateInput =
-      document.getElementById('steps-backfill-date');
-
-    dateInput.value = DateUtils.todayISO();
-
-    toggle.addEventListener('click', (e) => {
-      e.preventDefault();
-      form.classList.toggle('hidden');
-    });
-
-    document
-      .getElementById('steps-backfill-save')
-      .addEventListener('click', () => {
-        const date = dateInput.value;
-
-        const val =
-          parseInt(
-            document.getElementById('steps-backfill-value').value,
-            10
-          ) || 0;
-
-        if (!date) {
-          UI.toast('Vali kuupäev');
-          return;
-        }
-
-        Steps.save(date, val);
-
-        form.classList.add('hidden');
-
-        document.getElementById(
-          'steps-backfill-value'
-        ).value = '';
-
-        if (date === DateUtils.todayISO()) {
-          this.renderSecondaryGrid();
-        }
-
-        UI.toast(
-          `Sammud lisatud (${DateUtils.formatEt(date)})`
-        );
-      });
+  renderTrainingOverview() {
+    const { start, end } = DateUtils.weekBounds(DateUtils.todayISO());
+    const regular = Workouts.getAll();
+    const gym = GymPlans.getSessions();
+    const weekCount = regular.filter(workout => workout.date >= start && workout.date <= end).length
+      + gym.filter(session => session.date >= start && session.date <= end).length;
+    const combined = [
+      ...regular.map(workout => ({ date: workout.date, label: workout.type || 'Treening' })),
+      ...gym.map(session => ({ date: session.date, label: session.programLabel || 'Jõusaal' })),
+    ].sort((a, b) => b.date.localeCompare(a.date));
+    const latest = combined[0];
+    document.getElementById('dashboard-training-count').textContent = weekCount;
+    document.getElementById('dashboard-last-workout').textContent = latest
+      ? `Viimane: ${latest.label} · ${DateUtils.formatEt(latest.date)}`
+      : 'Viimast treeningut pole veel logitud';
   },
 
-  renderCycleStrip() {
-    const el =
-      document.getElementById('cycle-strip');
-
-    const status =
-      Cycle.computeStatus(DateUtils.todayISO());
-
-    if (!status) {
-      el.innerHTML = `
-        <span>TSÜKKEL — POLE ANDMEID</span>
-        <a
-          href="#"
-          class="cycle-strip-link"
-          data-nav="cycle"
-        >
-          LISA ALGUS →
-        </a>
-      `;
-    } else {
-      const phaseInfo =
-        Cycle.PHASES[status.phase];
-
-      el.innerHTML = `
-        <span>
-          <span
-            class="cycle-strip-dot"
-            style="background:${phaseInfo.color}"
-          ></span>
-          ${phaseInfo.label.toUpperCase()}
-          · PÄEV ${status.currentDay}/${status.cycleLength}
-        </span>
-
-        <a
-          href="#"
-          class="cycle-strip-link"
-          data-nav="cycle"
-        >
-          VAATA →
-        </a>
-      `;
-    }
-
-    const link =
-      el.querySelector('[data-nav]');
-
-    if (link) {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        App.showTab('cycle');
-      });
-    }
+  renderFinanceOverview() {
+    const stats = Finance.computeSafeToSpend();
+    document.getElementById('dashboard-safe-spend').textContent = `${Finance.fmt(stats.today)} €`;
+    document.getElementById('dashboard-payday-days').textContent = stats.daysToPayday;
   },
 
   renderMoneyStrip() {
@@ -468,21 +370,23 @@ const Dashboard = {
     );
 
     this.safeRender(
-      'Tsükli ülevaade',
-      () => this.renderCycleStrip(),
-      'cycle-strip'
+      'Treeningute ülevaade',
+      () => this.renderTrainingOverview(),
+      'dashboard-last-workout'
     );
 
     this.safeRender(
       'Finantsülevaade',
-      () => this.renderMoneyStrip(),
-      'money-strip'
+      () => {
+        this.renderFinanceOverview();
+        this.renderMoneyStrip();
+      },
+      'dashboard-safe-spend'
     );
 
   },
 
   init() {
-    this.initStepsBackfill();
     this.render();
     if (!this.autoRefreshTimer) {
       this.autoRefreshTimer = window.setInterval(() => {

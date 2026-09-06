@@ -5,7 +5,7 @@ const CloudSync = {
   MARKER: 'epp35_cloud_initialized',
   REVISION_KEY: 'epp35_cloud_revision',
   CLIENT_VERSION_KEY: 'epp35_sync_client_version',
-  CLIENT_VERSION: '23',
+  CLIENT_VERSION: '26',
   PHOTO_BUCKET: 'epp-photos',
   ready: false,
   applyingRemote: false,

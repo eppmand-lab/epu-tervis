@@ -15,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=23">
-<link rel="stylesheet" href="css/v2.css?v=23">
+<link rel="stylesheet" href="css/style.css?v=26">
+<link rel="stylesheet" href="css/v2.css?v=26">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -108,18 +108,6 @@
       <div class="quick-actions" id="dashboard-actions"></div>
 
       <div class="v2-utility-row">
-        <div class="cycle-strip" id="steps-backfill-strip">
-          <span>Sammud teistel päevadel?</span>
-          <a href="#" class="cycle-strip-link" id="steps-backfill-toggle">Lisa →</a>
-        </div>
-        <div class="card hidden" id="steps-backfill-form">
-          <div class="form-row">
-            <label>Kuupäev <input type="date" id="steps-backfill-date"></label>
-            <label>Sammud <input type="number" id="steps-backfill-value" placeholder="0"></label>
-          </div>
-          <button class="btn btn-secondary" id="steps-backfill-save">Salvesta</button>
-        </div>
-        <div class="cycle-strip" id="cycle-strip"></div>
         <div class="cycle-strip money-strip" id="money-strip"></div>
       </div>
 
@@ -308,21 +296,6 @@
       <div class="card">
         <h2>Faaside ajalugu</h2>
         <div id="cycle-history"></div>
-      </div>
-    </section>
-
-    <section id="tab-water" class="tab-panel">
-      <header class="panel-header"><h1>Vee tarbimine</h1></header>
-      <div class="card water-card">
-        <div class="water-ring-wrap">
-          <canvas id="water-ring" width="180" height="180"></canvas>
-          <div class="water-ring-label" id="water-ring-label"></div>
-        </div>
-        <div class="water-buttons" id="water-buttons"></div>
-      </div>
-      <div class="card">
-        <h2>Viimased 7 päeva</h2>
-        <div class="chart-wrap"><canvas id="chart-water"></canvas></div>
       </div>
     </section>
 
@@ -551,13 +524,6 @@
         </form>
       </div>
       <div class="card">
-        <h2>Vee eesmärk</h2>
-        <form id="water-target-form" class="stacked-form">
-          <label>Päevane eesmärk (ml) <input type="number" id="wt-target" step="50"></label>
-          <button type="submit" class="btn btn-primary">Salvesta</button>
-        </form>
-      </div>
-      <div class="card">
         <h2>Claude API (fotode analüüsiks)</h2>
         <p class="hint">Sinu API võti salvestatakse ainult sinu brauseri localStorage'is ja saadetakse ainult otse Anthropic API-le foto analüüsimiseks. Võtme saad hankida aadressilt console.anthropic.com.</p>
         <form id="apikey-form" class="stacked-form">
@@ -592,7 +558,7 @@
     <button class="v2-nav-btn active" data-v2-tab="dashboard"><span>⌂</span><small>Home</small></button>
     <button class="v2-nav-btn" data-v2-tab="progress"><span>✦</span><small>Insights</small></button>
     <button class="v2-nav-add" data-v2-tab="workouts" aria-label="Lisa uus kirje">+</button>
-    <button class="v2-nav-btn" data-v2-tab="settings"><span>◎</span><small>Goals</small></button>
+    <button class="v2-nav-btn" data-v2-tab="finance"><span>€</span><small>Finance</small></button>
     <button class="v2-nav-btn" id="v2-more-btn"><span>•••</span><small>More</small></button>
   </nav>
 
@@ -615,24 +581,23 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="js/storage.js?v=23"></script>
-<script src="js/utils.js?v=23"></script>
-<script src="js/charts.js?v=23"></script>
-<script src="js/nutrition.js?v=23"></script>
-<script src="js/workouts.js?v=23"></script>
-<script src="js/gymplans.js?v=23"></script>
-<script src="js/measurements.js?v=23"></script>
-<script src="js/cycle.js?v=23"></script>
-<script src="js/water.js?v=23"></script>
-<script src="js/steps.js?v=23"></script>
-<script src="js/photos.js?v=23"></script>
-<script src="js/finance.js?v=23"></script>
-<script src="js/settings.js?v=23"></script>
-<script src="js/progress.js?v=23"></script>
-<script src="js/dashboard.js?v=23"></script>
-<script src="js/sync.js?v=23"></script>
-<script src="js/app.js?v=23"></script>
-<script src="js/v2.js?v=23"></script>
+<script src="js/storage.js?v=26"></script>
+<script src="js/utils.js?v=26"></script>
+<script src="js/charts.js?v=26"></script>
+<script src="js/nutrition.js?v=26"></script>
+<script src="js/workouts.js?v=26"></script>
+<script src="js/gymplans.js?v=26"></script>
+<script src="js/measurements.js?v=26"></script>
+<script src="js/cycle.js?v=26"></script>
+<script src="js/steps.js?v=26"></script>
+<script src="js/photos.js?v=26"></script>
+<script src="js/finance.js?v=26"></script>
+<script src="js/settings.js?v=26"></script>
+<script src="js/progress.js?v=26"></script>
+<script src="js/dashboard.js?v=26"></script>
+<script src="js/sync.js?v=26"></script>
+<script src="js/app.js?v=26"></script>
+<script src="js/v2.js?v=26"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

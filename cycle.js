@@ -1,9 +1,9 @@
 const Cycle = {
   PHASES: {
-    menstrual: { label: 'Menstruatsioon', color: '#A91D3A' },
-    follicular: { label: 'Follikulaarne faas', color: '#3573B0' },
-    ovulation: { label: 'Ovulatsioon', color: '#C79433' },
-    luteal: { label: 'Luteaalne faas', color: '#A9A29A' },
+    menstrual: { label: 'Menstruatsioon', color: '#25B77B' },
+    follicular: { label: 'Follikulaarne faas', color: '#69CEAA' },
+    ovulation: { label: 'Ovulatsioon', color: '#179E94' },
+    luteal: { label: 'Luteaalne faas', color: '#899194' },
   },
 
   ADVICE: {

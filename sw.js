@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'epu-tervis-v23';
+const CACHE_VERSION = 'epu-tervis-v26';
 
 const PRECACHE_URLS = [
   './',
@@ -14,7 +14,6 @@ const PRECACHE_URLS = [
   './js/gymplans.js',
   './js/measurements.js',
   './js/cycle.js',
-  './js/water.js',
   './js/steps.js',
   './js/photos.js',
   './js/finance.js',

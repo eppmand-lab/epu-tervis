@@ -119,11 +119,6 @@ const Progress = {
         total: 7,
       },
       {
-        label: 'VEE-EESMÄRK TÄIDETUD',
-        done: days.filter(day => Water.getAmount(day) >= profile.waterTarget).length,
-        total: 7,
-      },
-      {
         label: 'VÄHEMALT 8 000 SAMMU',
         done: days.filter(day => Number(healthByDate[day]?.steps ?? Steps.getAmount(day) ?? 0) >= 8000).length,
         total: 7,

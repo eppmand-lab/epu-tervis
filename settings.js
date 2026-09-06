@@ -8,7 +8,6 @@ const Settings = {
     document.getElementById('mt-protein').value = p.macros.protein ?? '';
     document.getElementById('mt-fat').value = p.macros.fat ?? '';
     document.getElementById('mt-carbs').value = p.macros.carbs ?? '';
-    document.getElementById('wt-target').value = p.waterTarget ?? '';
     document.getElementById('anthropic-key').value = p.anthropicApiKey || '';
   },
 
@@ -34,15 +33,6 @@ const Settings = {
     Storage.saveProfile(p);
     Nutrition.renderAll();
     UI.toast('Eesmärgid salvestatud');
-  },
-
-  handleWaterTargetSubmit(e) {
-    e.preventDefault();
-    const p = Storage.getProfile();
-    p.waterTarget = parseFloat(document.getElementById('wt-target').value) || p.waterTarget;
-    Storage.saveProfile(p);
-    Water.renderAll();
-    UI.toast('Vee eesmärk salvestatud');
   },
 
   handleApiKeySubmit(e) {
@@ -78,7 +68,6 @@ const Settings = {
     this.loadIntoForms();
     document.getElementById('profile-form').addEventListener('submit', (e) => this.handleProfileSubmit(e));
     document.getElementById('macro-form').addEventListener('submit', (e) => this.handleMacroSubmit(e));
-    document.getElementById('water-target-form').addEventListener('submit', (e) => this.handleWaterTargetSubmit(e));
     document.getElementById('apikey-form').addEventListener('submit', (e) => this.handleApiKeySubmit(e));
     document.getElementById('export-data-btn').addEventListener('click', () => this.exportData());
     document.getElementById('reset-data-btn').addEventListener('click', () => this.resetData());
