@@ -5,7 +5,8 @@ const CloudSync = {
   MARKER: 'epp35_cloud_initialized',
   REVISION_KEY: 'epp35_cloud_revision',
   CLIENT_VERSION_KEY: 'epp35_sync_client_version',
-  CLIENT_VERSION: '26',
+  CLIENT_VERSION: '27',
+  LOCAL_BACKUP_KEY: 'epp35_pre_sync_backup',
   PHOTO_BUCKET: 'epp-photos',
   ready: false,
   applyingRemote: false,
@@ -156,8 +157,12 @@ const CloudSync = {
       this.dirty = true;
       await this.uploadState();
     } else if (Number(remote.revision || 0) > localRevision) {
-      await this.applyRemote(remote.data || {});
-      localStorage.setItem(this.REVISION_KEY, String(remote.revision || 0));
+      // Teise seadme uuem revision ei tohi selle seadme veel saatmata
+      // massiive (nt jõusaaliseansse või LHV tehinguid) tühjaks kirjutada.
+      const merged = this.mergeStates(remote.data || {}, this.localState());
+      await this.applyRemote(merged);
+      this.dirty = true;
+      await this.uploadState();
     } else if (localRevision > Number(remote.revision || 0)) {
       await this.syncPhotos();
       await this.uploadState();
@@ -167,6 +172,14 @@ const CloudSync = {
   },
 
   async applyRemote(data) {
+    try {
+      localStorage.setItem(this.LOCAL_BACKUP_KEY, JSON.stringify({
+        createdAt: new Date().toISOString(),
+        data: this.localState(),
+      }));
+    } catch (error) {
+      console.warn('Local pre-sync backup failed', error);
+    }
     this.applyingRemote = true;
     try {
       for (const key of Object.values(Storage.KEYS)) {

@@ -56,6 +56,7 @@ const Progress = {
   },
 
   renderWeightChart() {
+    if (typeof Chart === 'undefined') return;
     const points = Measurements.getAll()
       .filter(m => m.weight !== null && m.weight !== undefined)
       .slice(-16);
@@ -79,6 +80,7 @@ const Progress = {
   },
 
   renderWorkoutChart() {
+    if (typeof Chart === 'undefined') return;
     const rows = this.weeklyWorkoutCounts();
     const ctx = document.getElementById('chart-progress-workouts');
     ChartTheme.destroy(this.workoutChart);

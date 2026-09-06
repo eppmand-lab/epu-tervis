@@ -1,4 +1,14 @@
 const App = {
+  safeInit(name, initFn) {
+    try {
+      initFn();
+      return true;
+    } catch (error) {
+      console.error(`${name} init failed`, error);
+      return false;
+    }
+  },
+
   GROUPS: {
     today: [{ tab: 'dashboard', label: 'Täna' }],
     nutrition: [{ tab: 'nutrition', label: 'Toit' }],
@@ -92,16 +102,18 @@ const App = {
 
   init() {
     this.initTabs();
-    Nutrition.init();
-    Workouts.init();
-    GymPlans.init();
-    Measurements.init();
-    Cycle.init();
-    Photos.init();
-    Progress.init();
-    Finance.init();
-    Settings.init();
-    Dashboard.init();
+    [
+      ['Nutrition', () => Nutrition.init()],
+      ['Workouts', () => Workouts.init()],
+      ['GymPlans', () => GymPlans.init()],
+      ['Measurements', () => Measurements.init()],
+      ['Cycle', () => Cycle.init()],
+      ['Photos', () => Photos.init()],
+      ['Progress', () => Progress.init()],
+      ['Finance', () => Finance.init()],
+      ['Settings', () => Settings.init()],
+      ['Dashboard', () => Dashboard.init()],
+    ].forEach(([name, initFn]) => this.safeInit(name, initFn));
   },
 };
 

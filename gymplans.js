@@ -164,6 +164,7 @@ const GymPlans = {
   },
 
   renderProgressChart() {
+    if (typeof Chart === 'undefined') return;
     const exerciseName = document.getElementById('gym-progress-select').value;
     const sessions = this.getSessions().filter(s => s.entries.some(e => e.exerciseName === exerciseName));
     const points = sessions.map(s => ({
@@ -232,8 +233,8 @@ const GymPlans = {
   renderAll() {
     this.renderExerciseRows();
     this.renderProgressSelect();
-    this.renderProgressChart();
     this.renderHistory();
+    this.renderProgressChart();
   },
 
   init() {

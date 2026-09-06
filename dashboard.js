@@ -140,6 +140,7 @@ const Dashboard = {
   },
 
   async renderHeroWeek() {
+    if (typeof Chart === 'undefined') return;
     const iso = DateUtils.todayISO();
 
     document.getElementById('hero-week-num').textContent =

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'epu-tervis-v26';
+const CACHE_VERSION = 'epu-tervis-v27';
 
 const PRECACHE_URLS = [
   './',
@@ -55,7 +55,19 @@ self.addEventListener('activate', (event) => {
 // see cache hoiab ainult äpi enda koodi/varasid, et see töötaks ka ilma internetita.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  if (new URL(event.request.url).origin !== self.location.origin) return;
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) {
+    if (!OPTIONAL_REMOTE_URLS.includes(requestUrl.href)) return;
+    event.respondWith(
+      caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+        if (response && response.status === 200) {
+          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, response.clone()));
+        }
+        return response;
+      }))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

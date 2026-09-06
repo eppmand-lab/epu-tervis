@@ -157,6 +157,7 @@ const Measurements = {
   },
 
   renderWeightChart() {
+    if (typeof Chart === 'undefined') return;
     const all = this.getAll().filter(m => m.weight !== null && m.weight !== undefined);
     const ctx = document.getElementById('chart-weight');
     ChartTheme.destroy(this.weightChart);
@@ -187,6 +188,7 @@ const Measurements = {
   },
 
   renderMetricChart() {
+    if (typeof Chart === 'undefined') return;
     const metric = document.getElementById('measurement-metric-select').value;
     const all = this.getAll().filter(m => m[metric] !== null && m[metric] !== undefined);
     const ctx = document.getElementById('chart-measurements');
