@@ -126,6 +126,13 @@ const Finance = {
     }
   },
 
+  bindLhvButton() {
+    const button = document.getElementById('lhv-sync-btn');
+    if (!button || button.dataset.lhvBound === 'true') return;
+    button.dataset.lhvBound = 'true';
+    button.addEventListener('click', () => this.syncLhv());
+  },
+
   removeTransaction(id) {
     this.saveTransactions(this.getTransactions().filter(t => t.id !== id));
     this.saveGroups(this.getGroups().map(group => ({
@@ -834,7 +841,10 @@ const Finance = {
     document.getElementById('finance-goal-form').addEventListener('submit', (e) => this.handleGoalSubmit(e));
     document.getElementById('finance-csv-btn').addEventListener('click', () => this.exportCsv());
     document.getElementById('finance-group-btn').addEventListener('click', () => this.handleCreateGroup());
-    document.getElementById('lhv-sync-btn').addEventListener('click', () => this.syncLhv());
+    this.bindLhvButton();
     this.renderAll();
   },
 };
+
+// LHV ühendus peab töötama ka siis, kui mõni muu äpi moodul ei käivitu.
+document.addEventListener('DOMContentLoaded', () => Finance.bindLhvButton());

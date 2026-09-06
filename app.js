@@ -121,3 +121,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   const signedIn = await CloudSync.init();
   if (signedIn) App.init();
 });
+
+// Põhivaated taastuvad sõltumatult ka siis, kui mõni kõrvalmoodul init'is vea annab.
+window.addEventListener('load', () => {
+  let attempts = 0;
+  const recoverCoreViews = () => {
+    attempts++;
+    if (!CloudSync.ready) {
+      if (attempts >= 40) clearInterval(window.__eppCoreRecoveryTimer);
+      return;
+    }
+    clearInterval(window.__eppCoreRecoveryTimer);
+    try { Finance.bindLhvButton(); } catch (error) { console.error('LHV button recovery failed', error); }
+    try { Finance.renderAll(); } catch (error) { console.error('Finance recovery failed', error); }
+    try { Dashboard.render(); } catch (error) { console.error('Dashboard recovery failed', error); }
+  };
+  window.__eppCoreRecoveryTimer = window.setInterval(recoverCoreViews, 500);
+  recoverCoreViews();
+});

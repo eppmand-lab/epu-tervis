@@ -1,4 +1,4 @@
-# Epp 3.5 — v27 uuenduse juhend
+# Epp 3.5 — v28 uuenduse juhend
 
 ## GitHubi üleslaadimine
 
@@ -27,7 +27,7 @@
 - Jõusaalis on neli uut kava.
 - Kõik vaated kasutavad referentsiga sama Playfair Display + Inter fondipaari, sooja helehalli tausta, valgeid kaarte, tumedat teksti ning rohelist-mündist aktsendipaletti.
 - Finantsides saab LHV väljaminevaid tehinguid importida, kategooriaid muuta ning vähemalt kaks kulu nimetatud grupiks ühendada.
-- Rakenduse cache-versioon on `v27` ja koodifailidele kasutatakse network-first laadimist.
+- Rakenduse cache-versioon on `v28` ja koodifailidele kasutatakse network-first laadimist.
 
 ## LHV.ai ühendus
 
