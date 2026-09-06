@@ -70,8 +70,113 @@ const Finance = {
     this.saveTransactions(all);
   },
 
+  suggestCategory(text = '') {
+    const value = String(text).toLowerCase();
+    const rules = [
+      ['Toit', /rimi|selver|prisma|coop|lidl|maxima|restoran|kohvik|cafe|bolt food|wolt/],
+      ['Transport', /bolt|forus|taxi|circle k|alexela|terminal|kütus|parking|parkimine/],
+      ['Kodu', /ikea|jysk|ehituse abc|bauhof|k-rauta|kommunaal|elekter|vesi/],
+      ['Tervis', /apteek|pharmacy|kliinik|arst|dent|benu|südameapteek/],
+      ['Trenn', /myfitness|gym|reformer|pilates|sport/],
+      ['Riided', /zara|cos|arket|h&m|reserved|zalando/],
+      ['Tellimused', /spotify|netflix|icloud|google|adobe|openai|anthropic/],
+      ['Reisimine', /hotel|booking|airbnb|ryanair|air baltic|finnair/],
+      ['Meelelahutus', /kino|cinamon|apollo|teater|kontsert|bar|pub/],
+    ];
+    return rules.find(([, pattern]) => pattern.test(value))?.[0] || 'Muu';
+  },
+
+  async syncLhv() {
+    const button = document.getElementById('lhv-sync-btn');
+    const status = document.getElementById('lhv-sync-status');
+    button.disabled = true;
+    status.textContent = 'Sünkroniseerin LHV tehinguid…';
+    try {
+      const { data, error } = await CloudSync.client.functions.invoke('lhv-sync', { body: {} });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'LHV sünkroniseerimine ebaõnnestus');
+      const existing = this.getTransactions();
+      const known = new Set(existing.map(tx => tx.sourceId).filter(Boolean));
+      let added = 0;
+      for (const raw of (data.transactions || [])) {
+        // Kulude vaatesse impordime ainult kontolt väljunud maksed.
+        // Laekumised (nt palk) ei tohi kuu kulusid kunstlikult vähendada.
+        if (raw.direction !== 'DEBIT') continue;
+        if (!raw.sourceId || known.has(raw.sourceId)) continue;
+        const searchText = `${raw.merchant || ''} ${raw.description || ''}`;
+        existing.push({
+          id: Fmt.uid(), sourceId: raw.sourceId, source: 'lhv', date: raw.date,
+          amount: Math.abs(Number(raw.amount || 0)), merchant: raw.merchant || raw.description || 'LHV tehing',
+          category: this.suggestCategory(searchText), lifeDomain: '', necessity: '',
+          note: raw.description || '', sharedAmount: 0, isRefund: false,
+          isTransfer: false, currency: raw.currency || 'EUR',
+        });
+        known.add(raw.sourceId);
+        added++;
+      }
+      this.saveTransactions(existing.sort((a, b) => a.date.localeCompare(b.date)));
+      status.textContent = `Viimati sünkroniseeritud ${new Date().toLocaleString('et-EE')} · lisatud ${added} tehingut`;
+      this.renderAll();
+    } catch (error) {
+      console.error(error);
+      status.textContent = 'LHV ühendus vajab seadistamist või uuesti kinnitamist.';
+      UI.toast('LHV sünkroniseerimine ebaõnnestus');
+    } finally {
+      button.disabled = false;
+    }
+  },
+
   removeTransaction(id) {
     this.saveTransactions(this.getTransactions().filter(t => t.id !== id));
+    this.saveGroups(this.getGroups().map(group => ({
+      ...group,
+      transactionIds: group.transactionIds.filter(txId => txId !== id),
+    })).filter(group => group.transactionIds.length >= 2));
+  },
+
+  updateTransactionCategory(id, category) {
+    if (!this.CATEGORIES.includes(category)) return;
+    const transactions = this.getTransactions();
+    const transaction = transactions.find(tx => tx.id === id);
+    if (!transaction) return;
+    transaction.category = category;
+    this.saveTransactions(transactions);
+  },
+
+  getGroups() {
+    return Storage.get(Storage.KEYS.FINANCE_GROUPS, []).filter(group => group && Array.isArray(group.transactionIds));
+  },
+
+  saveGroups(groups) {
+    Storage.set(Storage.KEYS.FINANCE_GROUPS, groups);
+  },
+
+  createGroup(name, transactionIds) {
+    const selected = [...new Set(transactionIds)].filter(Boolean);
+    if (!name || selected.length < 2) return false;
+    const selectedSet = new Set(selected);
+    const groups = this.getGroups().map(group => ({
+      ...group,
+      transactionIds: group.transactionIds.filter(id => !selectedSet.has(id)),
+    })).filter(group => group.transactionIds.length >= 2);
+    groups.push({ id: Fmt.uid(), name, transactionIds: selected, createdAt: new Date().toISOString() });
+    this.saveGroups(groups);
+    return true;
+  },
+
+  removeGroup(id) {
+    this.saveGroups(this.getGroups().filter(group => group.id !== id));
+  },
+
+  handleCreateGroup() {
+    const nameInput = document.getElementById('finance-group-name');
+    const ids = [...document.querySelectorAll('.finance-tx-select:checked')].map(input => input.value);
+    if (!nameInput.value.trim()) { UI.toast('Sisesta grupi nimi'); return; }
+    if (ids.length < 2) { UI.toast('Vali vähemalt kaks tehingut'); return; }
+    this.createGroup(nameInput.value.trim(), ids);
+    nameInput.value = '';
+    this.renderTxHistory();
+    UI.toast('Kulugrupp loodud');
   },
 
   // Netomõju kuludele: ülekanded ei loe, tagastus/jagatud summa lahutatakse.
@@ -376,23 +481,63 @@ const Finance = {
       el.innerHTML = '<p class="hint">Tehinguid pole veel lisatud.</p>';
       return;
     }
-    el.innerHTML = all.slice(0, 50).map(t => {
+    const byId = new Map(all.map(tx => [tx.id, tx]));
+    const groups = this.getGroups().map(group => ({
+      ...group,
+      transactions: group.transactionIds.map(id => byId.get(id)).filter(Boolean),
+    })).filter(group => group.transactions.length >= 2);
+    const groupedIds = new Set(groups.flatMap(group => group.transactionIds));
+
+    const txHtml = (t, selectable = true) => {
       const net = this.netAmount(t);
       const tags = [t.lifeDomain, t.necessity, t.isRefund ? 'tagastus' : '', t.isTransfer ? 'ülekanne' : ''].filter(Boolean).join(' · ');
       return `
-        <div class="history-entry">
+        <div class="history-entry finance-transaction-row">
           <div class="he-top">
-            <span class="he-date">${DateUtils.formatEt(t.date)}</span>
+            <span class="he-date">${selectable ? `<input class="finance-tx-select" type="checkbox" value="${t.id}" aria-label="Vali tehing">` : ''} ${DateUtils.formatEt(t.date)}</span>
             <button class="he-remove" data-id="${t.id}">Kustuta</button>
           </div>
-          <div class="he-title">${this._esc(t.category)} — ${this.fmt(net)} €</div>
+          <div class="he-title">${this._esc(t.merchant || t.category)} — ${this.fmt(net)} €</div>
+          <label class="finance-category-control">
+            <span>Kategooria</span>
+            <select class="finance-category-select" data-id="${t.id}" aria-label="Muuda tehingu kategooriat">
+              ${this.CATEGORIES.map(category => `<option value="${category}"${category === t.category ? ' selected' : ''}>${category}</option>`).join('')}
+            </select>
+          </label>
           ${tags ? `<div class="he-sub">${this._esc(tags)}</div>` : ''}
           ${t.note ? `<div class="he-sub">${this._esc(t.note)}</div>` : ''}
         </div>
       `;
+    };
+
+    const groupHtml = groups.map(group => {
+      const total = group.transactions.reduce((sum, tx) => sum + this.netAmount(tx), 0);
+      return `
+        <details class="finance-event-group">
+          <summary>
+            <span><strong>${this._esc(group.name)}</strong><small>${group.transactions.length} tehingut</small></span>
+            <strong>${this.fmt(total)} €</strong>
+          </summary>
+          <div class="finance-event-items">${group.transactions.map(tx => txHtml(tx, false)).join('')}</div>
+          <button class="btn btn-ghost finance-ungroup-btn" data-group-id="${group.id}" type="button">Võta grupp lahti</button>
+        </details>
+      `;
     }).join('');
+
+    const ungroupedHtml = all.filter(tx => !groupedIds.has(tx.id)).slice(0, 50).map(tx => txHtml(tx, true)).join('');
+    el.innerHTML = groupHtml + ungroupedHtml;
     el.querySelectorAll('.he-remove').forEach(btn => {
       btn.addEventListener('click', () => { this.removeTransaction(btn.dataset.id); this.renderAll(); });
+    });
+    el.querySelectorAll('.finance-ungroup-btn').forEach(btn => {
+      btn.addEventListener('click', () => { this.removeGroup(btn.dataset.groupId); this.renderTxHistory(); });
+    });
+    el.querySelectorAll('.finance-category-select').forEach(select => {
+      select.addEventListener('change', () => {
+        this.updateTransactionCategory(select.dataset.id, select.value);
+        this.renderAll();
+        UI.toast('Kategooria muudetud');
+      });
     });
   },
 
@@ -688,6 +833,8 @@ const Finance = {
     document.getElementById('finance-recurring-form').addEventListener('submit', (e) => this.handleRecurringSubmit(e));
     document.getElementById('finance-goal-form').addEventListener('submit', (e) => this.handleGoalSubmit(e));
     document.getElementById('finance-csv-btn').addEventListener('click', () => this.exportCsv());
+    document.getElementById('finance-group-btn').addEventListener('click', () => this.handleCreateGroup());
+    document.getElementById('lhv-sync-btn').addEventListener('click', () => this.syncLhv());
     this.renderAll();
   },
 };

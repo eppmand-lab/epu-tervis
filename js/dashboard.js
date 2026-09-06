@@ -24,12 +24,10 @@ const Dashboard = {
   },
 
   async renderHeroEnergy() {
-  const iso = DateUtils.todayISO();
-
-  await Nutrition.loadDay(iso);
-
-  const profile = Storage.getProfile();
-  const totals = Nutrition.dayTotals(iso);
+    const iso = DateUtils.todayISO();
+    await Nutrition.loadDay(iso);
+    const profile = Storage.getProfile();
+    const totals = Nutrition.dayTotals(iso);
     const pct = profile.macros.kcal
       ? Math.min(100, (totals.kcal / profile.macros.kcal) * 100)
       : 0;
@@ -38,17 +36,28 @@ const Dashboard = {
     document.getElementById('hero-kcal-target').textContent =
       `/ ${Fmt.int(profile.macros.kcal)} KCAL`;
     document.getElementById('hero-kcal-fill').style.width = `${pct}%`;
+    const percentEl = document.getElementById('hero-kcal-percent');
+    if (percentEl) percentEl.textContent = `${Math.round(pct)}%`;
+    const ringEl = document.getElementById('hero-kcal-ring');
+    if (ringEl) ringEl.style.setProperty('--p', `${pct * 3.6}deg`);
+    const macrosEl = document.getElementById('dashboard-macros');
+    if (macrosEl) {
+      macrosEl.innerHTML = `
+        <span>V ${Fmt.round1(totals.protein)} g</span>
+        <span>R ${Fmt.round1(totals.fat)} g</span>
+        <span>SV ${Fmt.round1(totals.carbs)} g</span>
+      `;
+    }
   },
 
   async dailyGuidance() {
-  const iso = DateUtils.todayISO();
-
-  await Nutrition.loadDay(iso);
-
-  const profile = Storage.getProfile();
-  const totals = Nutrition.dayTotals(iso);
+    const iso = DateUtils.todayISO();
+    await Nutrition.loadDay(iso);
+    const health = await CloudSync.getHealthDaily(iso);
+    const profile = Storage.getProfile();
+    const totals = Nutrition.dayTotals(iso);
     const water = Water.getAmount(iso);
-    const steps = Steps.getAmount(iso);
+    const steps = health?.steps ?? Steps.getAmount(iso);
 
     const todayWorkouts =
       Workouts.getAll().filter(w => w.date === iso).length +
@@ -99,8 +108,8 @@ const Dashboard = {
   },
 
   async renderDailyBrief() {
-  const el = document.getElementById('daily-brief');
-  const guidance = await this.dailyGuidance();
+    const el = document.getElementById('daily-brief');
+    const guidance = await this.dailyGuidance();
 
     el.innerHTML = `
       <div class="daily-brief-card">
@@ -113,7 +122,7 @@ const Dashboard = {
 
   renderQuickActions() {
     const actions = [
-      { tab: 'nutrition', label: '+ Lisa toit' },
+      { tab: 'nutrition', label: 'Vaata toitumist' },
       { tab: 'water', label: '+ Lisa vesi' },
       { tab: 'workouts', label: '+ Logi trenn' },
       { tab: 'measurements', label: 'Mõõtmised' },
@@ -135,7 +144,7 @@ const Dashboard = {
     });
   },
 
-  renderHeroWeek() {
+  async renderHeroWeek() {
     const iso = DateUtils.todayISO();
 
     document.getElementById('hero-week-num').textContent =
@@ -143,6 +152,7 @@ const Dashboard = {
 
     const { start } = DateUtils.weekBounds(iso);
     const days = DateUtils.rangeDays(start, iso);
+    await Nutrition.loadDays(days);
     const values = days.map(d => Nutrition.dayTotals(d).kcal);
 
     const ctx = document.getElementById('chart-week-spark');
@@ -469,27 +479,19 @@ const Dashboard = {
       'money-strip'
     );
 
-    this.safeRender(
-      'Nädalaraport',
-      () => WeeklyAnalysis.renderCard(),
-      'weekly-analysis-card'
-    );
-
-    WeeklyAnalysis.maybeAutoGenerate()
-      .then(() =>
-        this.safeRender(
-          'Nädalaraport',
-          () => WeeklyAnalysis.renderCard(),
-          'weekly-analysis-card'
-        )
-      )
-      .catch(error =>
-        console.error('Weekly analysis error', error)
-      );
   },
 
   init() {
     this.initStepsBackfill();
     this.render();
+    if (!this.autoRefreshTimer) {
+      this.autoRefreshTimer = window.setInterval(() => {
+        if (!document.hidden) this.render();
+      }, 5 * 60 * 1000);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) this.render();
+      });
+      window.addEventListener('focus', () => this.render());
+    }
   },
 };

@@ -3,7 +3,7 @@ const Measurements = {
   metricChart: null,
 
   getAll() {
-    return Storage.get(Storage.KEYS.MEASUREMENTS, []);
+    return Storage.get(Storage.KEYS.MEASUREMENTS, []).filter(item => item && typeof item === 'object');
   },
 
   save(list) {

@@ -9,8 +9,14 @@ const Finance = {
     return this.monthKey(DateUtils.todayISO());
   },
 
+  previousMonthKey(monthKey) {
+    const [year, month] = monthKey.split('-').map(Number);
+    const date = new Date(year, month - 2, 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  },
+
   defaultPlan() {
-    return { income: 0, fixedCosts: 0, invest: 0, extra: 0, buffer: 0, paydayDay: 5 };
+    return { income: 0, fixedCosts: 0, invest: 0, extra: 0, buffer: 0, paydayDay: 31 };
   },
 
   getPlans() {
@@ -21,9 +27,22 @@ const Finance = {
     Storage.set(Storage.KEYS.FINANCE_PLANS, plans);
   },
 
+  migratePaydayToMonthEnd() {
+    const plans = this.getPlans();
+    let changed = false;
+    Object.values(plans).forEach(plan => {
+      if (plan.paydayDay !== 31) {
+        plan.paydayDay = 31;
+        changed = true;
+      }
+    });
+    if (changed) this.savePlans(plans);
+  },
+
   getPlan(monthKey) {
     const plans = this.getPlans();
-    return plans[monthKey] || this.defaultPlan();
+    const plan = plans[monthKey] || this.defaultPlan();
+    return { ...plan, paydayDay: 31 };
   },
 
   savePlan(monthKey, plan) {
@@ -51,8 +70,113 @@ const Finance = {
     this.saveTransactions(all);
   },
 
+  suggestCategory(text = '') {
+    const value = String(text).toLowerCase();
+    const rules = [
+      ['Toit', /rimi|selver|prisma|coop|lidl|maxima|restoran|kohvik|cafe|bolt food|wolt/],
+      ['Transport', /bolt|forus|taxi|circle k|alexela|terminal|kütus|parking|parkimine/],
+      ['Kodu', /ikea|jysk|ehituse abc|bauhof|k-rauta|kommunaal|elekter|vesi/],
+      ['Tervis', /apteek|pharmacy|kliinik|arst|dent|benu|südameapteek/],
+      ['Trenn', /myfitness|gym|reformer|pilates|sport/],
+      ['Riided', /zara|cos|arket|h&m|reserved|zalando/],
+      ['Tellimused', /spotify|netflix|icloud|google|adobe|openai|anthropic/],
+      ['Reisimine', /hotel|booking|airbnb|ryanair|air baltic|finnair/],
+      ['Meelelahutus', /kino|cinamon|apollo|teater|kontsert|bar|pub/],
+    ];
+    return rules.find(([, pattern]) => pattern.test(value))?.[0] || 'Muu';
+  },
+
+  async syncLhv() {
+    const button = document.getElementById('lhv-sync-btn');
+    const status = document.getElementById('lhv-sync-status');
+    button.disabled = true;
+    status.textContent = 'Sünkroniseerin LHV tehinguid…';
+    try {
+      const { data, error } = await CloudSync.client.functions.invoke('lhv-sync', { body: {} });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'LHV sünkroniseerimine ebaõnnestus');
+      const existing = this.getTransactions();
+      const known = new Set(existing.map(tx => tx.sourceId).filter(Boolean));
+      let added = 0;
+      for (const raw of (data.transactions || [])) {
+        // Kulude vaatesse impordime ainult kontolt väljunud maksed.
+        // Laekumised (nt palk) ei tohi kuu kulusid kunstlikult vähendada.
+        if (raw.direction !== 'DEBIT') continue;
+        if (!raw.sourceId || known.has(raw.sourceId)) continue;
+        const searchText = `${raw.merchant || ''} ${raw.description || ''}`;
+        existing.push({
+          id: Fmt.uid(), sourceId: raw.sourceId, source: 'lhv', date: raw.date,
+          amount: Math.abs(Number(raw.amount || 0)), merchant: raw.merchant || raw.description || 'LHV tehing',
+          category: this.suggestCategory(searchText), lifeDomain: '', necessity: '',
+          note: raw.description || '', sharedAmount: 0, isRefund: false,
+          isTransfer: false, currency: raw.currency || 'EUR',
+        });
+        known.add(raw.sourceId);
+        added++;
+      }
+      this.saveTransactions(existing.sort((a, b) => a.date.localeCompare(b.date)));
+      status.textContent = `Viimati sünkroniseeritud ${new Date().toLocaleString('et-EE')} · lisatud ${added} tehingut`;
+      this.renderAll();
+    } catch (error) {
+      console.error(error);
+      status.textContent = 'LHV ühendus vajab seadistamist või uuesti kinnitamist.';
+      UI.toast('LHV sünkroniseerimine ebaõnnestus');
+    } finally {
+      button.disabled = false;
+    }
+  },
+
   removeTransaction(id) {
     this.saveTransactions(this.getTransactions().filter(t => t.id !== id));
+    this.saveGroups(this.getGroups().map(group => ({
+      ...group,
+      transactionIds: group.transactionIds.filter(txId => txId !== id),
+    })).filter(group => group.transactionIds.length >= 2));
+  },
+
+  updateTransactionCategory(id, category) {
+    if (!this.CATEGORIES.includes(category)) return;
+    const transactions = this.getTransactions();
+    const transaction = transactions.find(tx => tx.id === id);
+    if (!transaction) return;
+    transaction.category = category;
+    this.saveTransactions(transactions);
+  },
+
+  getGroups() {
+    return Storage.get(Storage.KEYS.FINANCE_GROUPS, []).filter(group => group && Array.isArray(group.transactionIds));
+  },
+
+  saveGroups(groups) {
+    Storage.set(Storage.KEYS.FINANCE_GROUPS, groups);
+  },
+
+  createGroup(name, transactionIds) {
+    const selected = [...new Set(transactionIds)].filter(Boolean);
+    if (!name || selected.length < 2) return false;
+    const selectedSet = new Set(selected);
+    const groups = this.getGroups().map(group => ({
+      ...group,
+      transactionIds: group.transactionIds.filter(id => !selectedSet.has(id)),
+    })).filter(group => group.transactionIds.length >= 2);
+    groups.push({ id: Fmt.uid(), name, transactionIds: selected, createdAt: new Date().toISOString() });
+    this.saveGroups(groups);
+    return true;
+  },
+
+  removeGroup(id) {
+    this.saveGroups(this.getGroups().filter(group => group.id !== id));
+  },
+
+  handleCreateGroup() {
+    const nameInput = document.getElementById('finance-group-name');
+    const ids = [...document.querySelectorAll('.finance-tx-select:checked')].map(input => input.value);
+    if (!nameInput.value.trim()) { UI.toast('Sisesta grupi nimi'); return; }
+    if (ids.length < 2) { UI.toast('Vali vähemalt kaks tehingut'); return; }
+    this.createGroup(nameInput.value.trim(), ids);
+    nameInput.value = '';
+    this.renderTxHistory();
+    UI.toast('Kulugrupp loodud');
   },
 
   // Netomõju kuludele: ülekanded ei loe, tagastus/jagatud summa lahutatakse.
@@ -181,7 +305,7 @@ const Finance = {
     const spent = this.spentInMonth(monthKey);
     const remainingFree = free - spent;
 
-    const paydayIso = this.nextPayday(todayIso, plan.paydayDay || 5);
+    const paydayIso = this.nextPayday(todayIso, plan.paydayDay || 31);
     const upcoming = this.upcomingRecurring(todayIso, paydayIso);
     const upcomingTotal = upcoming.reduce((s, u) => s + u.amount, 0);
 
@@ -226,6 +350,35 @@ const Finance = {
     });
   },
 
+  renderMonthTotal() {
+    const monthKey = this.todayMonthKey();
+    const plan = this.getPlan(monthKey);
+    const transactions = this.spentInMonth(monthKey);
+    const total = plan.fixedCosts + transactions;
+    const previousKey = this.previousMonthKey(monthKey);
+    const previousPlan = this.getPlan(previousKey);
+    const previousTransactions = this.spentInMonth(previousKey);
+    const previousTotal = previousPlan.fixedCosts + previousTransactions;
+    const hasPreviousData = previousPlan.fixedCosts > 0 || this.monthTransactions(previousKey).length > 0;
+    const difference = total - previousTotal;
+    const monthLabel = new Intl.DateTimeFormat('et-EE', { month: 'long', year: 'numeric' })
+      .format(new Date(`${monthKey}-01T00:00:00`));
+
+    document.getElementById('finance-month-total').innerHTML = `
+      <div class="finance-total-row">
+        <div>
+          <div class="tile-label">${monthLabel.toUpperCase()} · KUU KULUD KOKKU</div>
+          <div class="finance-total-value">${this.fmt(total)} €</div>
+        </div>
+        <div class="finance-total-detail">
+          <span>PÜSIKULUD ${this.fmt(plan.fixedCosts)} €</span>
+          <span>MUUD KULUKANDED ${this.fmt(transactions)} €</span>
+          ${hasPreviousData ? `<span class="${difference <= 0 ? 'is-positive' : 'is-negative'}">EELMISE KUUGA ${difference > 0 ? '+' : ''}${this.fmt(difference)} €</span>` : ''}
+        </div>
+      </div>
+    `;
+  },
+
   renderSecondary() {
     const monthKey = this.todayMonthKey();
     const plan = this.getPlan(monthKey);
@@ -240,7 +393,7 @@ const Finance = {
     const el = document.getElementById('finance-secondary');
     el.innerHTML = `
       <div class="sec-tile sec-blue">
-        <div class="tile-label">KULUTATUD SEL KUUL</div>
+        <div class="tile-label">MUUD KULUKANDED SEL KUUL</div>
         <div class="sec-tile-value">${this.fmt(spent)} €</div>
         <div class="sec-tile-sub">VABA ${this.fmt(free)} €-st</div>
       </div>
@@ -256,7 +409,7 @@ const Finance = {
     const el = document.getElementById('finance-upcoming');
     const todayIso = DateUtils.todayISO();
     const plan = this.getPlan(this.todayMonthKey());
-    const paydayIso = this.nextPayday(todayIso, plan.paydayDay || 5);
+    const paydayIso = this.nextPayday(todayIso, plan.paydayDay || 31);
     const upcoming = this.upcomingRecurring(todayIso, paydayIso);
     if (!upcoming.length) {
       el.innerHTML = '<p class="hint">Ühtegi püsikulu ei ole plaanis enne palgapäeva.</p>';
@@ -328,23 +481,63 @@ const Finance = {
       el.innerHTML = '<p class="hint">Tehinguid pole veel lisatud.</p>';
       return;
     }
-    el.innerHTML = all.slice(0, 50).map(t => {
+    const byId = new Map(all.map(tx => [tx.id, tx]));
+    const groups = this.getGroups().map(group => ({
+      ...group,
+      transactions: group.transactionIds.map(id => byId.get(id)).filter(Boolean),
+    })).filter(group => group.transactions.length >= 2);
+    const groupedIds = new Set(groups.flatMap(group => group.transactionIds));
+
+    const txHtml = (t, selectable = true) => {
       const net = this.netAmount(t);
       const tags = [t.lifeDomain, t.necessity, t.isRefund ? 'tagastus' : '', t.isTransfer ? 'ülekanne' : ''].filter(Boolean).join(' · ');
       return `
-        <div class="history-entry">
+        <div class="history-entry finance-transaction-row">
           <div class="he-top">
-            <span class="he-date">${DateUtils.formatEt(t.date)}</span>
+            <span class="he-date">${selectable ? `<input class="finance-tx-select" type="checkbox" value="${t.id}" aria-label="Vali tehing">` : ''} ${DateUtils.formatEt(t.date)}</span>
             <button class="he-remove" data-id="${t.id}">Kustuta</button>
           </div>
-          <div class="he-title">${this._esc(t.category)} — ${this.fmt(net)} €</div>
+          <div class="he-title">${this._esc(t.merchant || t.category)} — ${this.fmt(net)} €</div>
+          <label class="finance-category-control">
+            <span>Kategooria</span>
+            <select class="finance-category-select" data-id="${t.id}" aria-label="Muuda tehingu kategooriat">
+              ${this.CATEGORIES.map(category => `<option value="${category}"${category === t.category ? ' selected' : ''}>${category}</option>`).join('')}
+            </select>
+          </label>
           ${tags ? `<div class="he-sub">${this._esc(tags)}</div>` : ''}
           ${t.note ? `<div class="he-sub">${this._esc(t.note)}</div>` : ''}
         </div>
       `;
+    };
+
+    const groupHtml = groups.map(group => {
+      const total = group.transactions.reduce((sum, tx) => sum + this.netAmount(tx), 0);
+      return `
+        <details class="finance-event-group">
+          <summary>
+            <span><strong>${this._esc(group.name)}</strong><small>${group.transactions.length} tehingut</small></span>
+            <strong>${this.fmt(total)} €</strong>
+          </summary>
+          <div class="finance-event-items">${group.transactions.map(tx => txHtml(tx, false)).join('')}</div>
+          <button class="btn btn-ghost finance-ungroup-btn" data-group-id="${group.id}" type="button">Võta grupp lahti</button>
+        </details>
+      `;
     }).join('');
+
+    const ungroupedHtml = all.filter(tx => !groupedIds.has(tx.id)).slice(0, 50).map(tx => txHtml(tx, true)).join('');
+    el.innerHTML = groupHtml + ungroupedHtml;
     el.querySelectorAll('.he-remove').forEach(btn => {
       btn.addEventListener('click', () => { this.removeTransaction(btn.dataset.id); this.renderAll(); });
+    });
+    el.querySelectorAll('.finance-ungroup-btn').forEach(btn => {
+      btn.addEventListener('click', () => { this.removeGroup(btn.dataset.groupId); this.renderTxHistory(); });
+    });
+    el.querySelectorAll('.finance-category-select').forEach(select => {
+      select.addEventListener('change', () => {
+        this.updateTransactionCategory(select.dataset.id, select.value);
+        this.renderAll();
+        UI.toast('Kategooria muudetud');
+      });
     });
   },
 
@@ -355,6 +548,7 @@ const Finance = {
       el.innerHTML = '<p class="hint">Püsikulusid pole veel lisatud.</p>';
       return;
     }
+    const total = all.reduce((sum, recurring) => sum + (Number(recurring.amount) || 0), 0);
     el.innerHTML = all.map(r => `
       <div class="history-entry">
         <div class="he-top">
@@ -363,7 +557,12 @@ const Finance = {
         </div>
         <div class="he-sub">${this.fmt(r.amount)} € · iga kuu ${r.dayOfMonth}. kuupäev</div>
       </div>
-    `).join('');
+    `).join('') + `
+      <div class="recurring-total-row" aria-label="Püsikulud kokku">
+        <span>PÜSIKULUD KOKKU</span>
+        <strong>${this.fmt(total)} € / KUU</strong>
+      </div>
+    `;
     el.querySelectorAll('.he-remove').forEach(btn => {
       btn.addEventListener('click', () => { this.removeRecurring(btn.dataset.id); this.renderAll(); });
     });
@@ -538,7 +737,7 @@ const Finance = {
       invest: parseFloat(document.getElementById('fp-invest').value) || 0,
       extra: parseFloat(document.getElementById('fp-extra').value) || 0,
       buffer: parseFloat(document.getElementById('fp-buffer').value) || 0,
-      paydayDay: parseInt(document.getElementById('fp-payday').value, 10) || 5,
+      paydayDay: 31,
     };
     this.savePlan(monthKey, plan);
     this.renderAll();
@@ -602,7 +801,9 @@ const Finance = {
     document.getElementById('fp-invest').value = plan.invest || '';
     document.getElementById('fp-extra').value = plan.extra || '';
     document.getElementById('fp-buffer').value = plan.buffer || '';
-    document.getElementById('fp-payday').value = plan.paydayDay || 5;
+    const paydayInput = document.getElementById('fp-payday');
+    paydayInput.value = 31;
+    paydayInput.disabled = true;
   },
 
   _esc(s) {
@@ -612,6 +813,7 @@ const Finance = {
   },
 
   renderAll() {
+    this.renderMonthTotal();
     this.renderStsHero();
     this.renderSecondary();
     this.renderUpcoming();
@@ -624,12 +826,15 @@ const Finance = {
 
   init() {
     document.getElementById('tx-date').value = DateUtils.todayISO();
+    this.migratePaydayToMonthEnd();
     this.loadPlanForm();
     document.getElementById('finance-plan-form').addEventListener('submit', (e) => this.handlePlanSubmit(e));
     document.getElementById('finance-tx-form').addEventListener('submit', (e) => this.handleTxSubmit(e));
     document.getElementById('finance-recurring-form').addEventListener('submit', (e) => this.handleRecurringSubmit(e));
     document.getElementById('finance-goal-form').addEventListener('submit', (e) => this.handleGoalSubmit(e));
     document.getElementById('finance-csv-btn').addEventListener('click', () => this.exportCsv());
+    document.getElementById('finance-group-btn').addEventListener('click', () => this.handleCreateGroup());
+    document.getElementById('lhv-sync-btn').addEventListener('click', () => this.syncLhv());
     this.renderAll();
   },
 };

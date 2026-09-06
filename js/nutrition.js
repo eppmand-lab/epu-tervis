@@ -1,5 +1,6 @@
 const Nutrition = {
   healthByDate: {},
+  updatedByDate: {},
 
   emptyTotals() {
     return {
@@ -28,7 +29,12 @@ const Nutrition = {
     };
 
     this.healthByDate[iso] = totals;
+    this.updatedByDate[iso] = health.updated_at || null;
     return totals;
+  },
+
+  async loadDays(days) {
+    await Promise.all((days || []).map(day => this.loadDay(day)));
   },
 
   dayTotals(iso) {
@@ -155,6 +161,10 @@ const Nutrition = {
     }
 
     if (log) {
+      const updatedAt = this.updatedByDate[iso];
+      const updatedLabel = updatedAt
+        ? new Date(updatedAt).toLocaleString('et-EE', { dateStyle: 'short', timeStyle: 'short' })
+        : 'uuendamise aeg puudub';
       log.innerHTML = `
         <div class="food-log-item">
           <div>
@@ -169,9 +179,12 @@ const Nutrition = {
               SV ${Fmt.round1(totals.carbs)} g ·
               K ${Fmt.round1(totals.fiber)} g
             </div>
+            <div class="fli-sub">Viimati uuendatud ${updatedLabel}</div>
           </div>
         </div>
+        <button class="btn btn-ghost" id="nutrition-refresh-btn" type="button">Värskenda</button>
       `;
+      document.getElementById('nutrition-refresh-btn')?.addEventListener('click', () => this.renderAll());
     }
   },
 

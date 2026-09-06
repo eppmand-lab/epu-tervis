@@ -2,6 +2,11 @@ const Progress = {
   weightChart: null,
   workoutChart: null,
 
+  async healthForDays(days) {
+    const rows = await Promise.all(days.map(day => CloudSync.getHealthDaily(day)));
+    return Object.fromEntries(days.map((day, index) => [day, rows[index]]));
+  },
+
   weeklyWorkoutCounts(weeks = 8) {
     const today = DateUtils.todayISO();
     const current = DateUtils.weekBounds(today);
@@ -16,7 +21,7 @@ const Progress = {
     return rows;
   },
 
-  renderSummary() {
+  async renderSummary() {
     const el = document.getElementById('progress-summary');
     const measurements = Measurements.getAll().filter(m => m.weight !== null && m.weight !== undefined);
     const latest = measurements.slice(-1)[0] || null;
@@ -26,8 +31,14 @@ const Progress = {
     const workoutCount = Workouts.getAll().filter(w => w.date >= last28).length
       + GymPlans.getSessions().filter(s => s.date >= last28).length;
     const sevenDays = DateUtils.lastNDays(7);
+    const [, healthByDate] = await Promise.all([
+      Nutrition.loadDays(sevenDays),
+      this.healthForDays(sevenDays),
+    ]);
     const foodDays = sevenDays.filter(day => Nutrition.dayTotals(day).kcal > 0).length;
-    const avgSteps = Math.round(sevenDays.reduce((sum, day) => sum + Steps.getAmount(day), 0) / 7);
+    const avgSteps = Math.round(sevenDays.reduce((sum, day) => {
+      return sum + Number(healthByDate[day]?.steps ?? Steps.getAmount(day) ?? 0);
+    }, 0) / 7);
 
     const cards = [
       { label: 'VIIMANE NÄDALA KAAL', value: latest ? `${latest.weight} KG` : '—', sub: delta === null ? 'Trend tekib kahe mõõtmise järel' : `${delta > 0 ? '+' : ''}${delta} kg eelmisest mõõtmisest` },
@@ -88,10 +99,14 @@ const Progress = {
     }));
   },
 
-  renderConsistency() {
+  async renderConsistency() {
     const el = document.getElementById('progress-consistency');
     const profile = Storage.getProfile();
     const days = DateUtils.lastNDays(7);
+    const [, healthByDate] = await Promise.all([
+      Nutrition.loadDays(days),
+      this.healthForDays(days),
+    ]);
     const rows = [
       {
         label: 'TOITUMINE LOGITUD',
@@ -110,7 +125,7 @@ const Progress = {
       },
       {
         label: 'VÄHEMALT 8 000 SAMMU',
-        done: days.filter(day => Steps.getAmount(day) >= 8000).length,
+        done: days.filter(day => Number(healthByDate[day]?.steps ?? Steps.getAmount(day) ?? 0) >= 8000).length,
         total: 7,
       },
     ];
@@ -127,11 +142,11 @@ const Progress = {
     }).join('');
   },
 
-  renderAll() {
-    this.renderSummary();
+  async renderAll() {
+    await this.renderSummary();
     this.renderWeightChart();
     this.renderWorkoutChart();
-    this.renderConsistency();
+    await this.renderConsistency();
   },
 
   init() {

@@ -15,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=17">
-<link rel="stylesheet" href="css/v2.css?v=1">
+<link rel="stylesheet" href="css/style.css?v=23">
+<link rel="stylesheet" href="css/v2.css?v=23">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -126,7 +126,6 @@
       <div class="v2-week-chart-hidden" aria-hidden="true">
         <span id="hero-week-num"></span><canvas id="chart-week-spark"></canvas>
       </div>
-      <div id="weekly-analysis-card"></div>
     </section>
 
     <section id="tab-nutrition" class="tab-panel">
@@ -381,6 +380,15 @@
 
       <div id="finance-month-total"></div>
 
+      <div class="card lhv-connection-card">
+        <div>
+          <div class="tile-label">LHV.AI · AINULT LUGEMINE</div>
+          <h2>LHV kulud</h2>
+          <p class="hint" id="lhv-sync-status">Ühendus ootab seadistamist.</p>
+        </div>
+        <button class="btn btn-secondary" id="lhv-sync-btn" type="button">Sünkroniseeri LHV</button>
+      </div>
+
       <div class="weekly-poster" id="finance-sts-hero"></div>
 
       <div class="secondary-grid" id="finance-secondary"></div>
@@ -473,6 +481,11 @@
 
       <div class="card">
         <h2>Tehingute ajalugu</h2>
+        <div class="finance-group-toolbar">
+          <input type="text" id="finance-group-name" placeholder="Grupi nimi, nt Päev tüdrukutega väljas">
+          <button class="btn btn-secondary" id="finance-group-btn" type="button">Grupeeri valitud</button>
+        </div>
+        <p class="hint">Märgi vähemalt kaks tehingut ja koonda need enda jaoks ühe sündmuse alla.</p>
         <div id="finance-tx-history"></div>
         <button class="btn btn-ghost" id="finance-csv-btn">Ekspordi CSV</button>
       </div>
@@ -602,25 +615,24 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="js/storage.js?v=17"></script>
-<script src="js/utils.js?v=17"></script>
-<script src="js/charts.js?v=17"></script>
-<script src="js/nutrition.js?v=19"></script>
-<script src="js/workouts.js?v=17"></script>
-<script src="js/gymplans.js?v=17"></script>
-<script src="js/measurements.js?v=17"></script>
-<script src="js/cycle.js?v=17"></script>
-<script src="js/water.js?v=17"></script>
-<script src="js/steps.js?v=17"></script>
-<script src="js/photos.js?v=17"></script>
-<script src="js/finance.js?v=17"></script>
-<script src="js/settings.js?v=17"></script>
-<script src="js/weekly.js?v=17"></script>
-<script src="js/progress.js?v=17"></script>
-<script src="js/dashboard.js?v=20"></script>
-<script src="js/sync.js?v=18"></script>
-<script src="js/app.js?v=17"></script>
-<script src="js/v2.js?v=1"></script>
+<script src="js/storage.js?v=23"></script>
+<script src="js/utils.js?v=23"></script>
+<script src="js/charts.js?v=23"></script>
+<script src="js/nutrition.js?v=23"></script>
+<script src="js/workouts.js?v=23"></script>
+<script src="js/gymplans.js?v=23"></script>
+<script src="js/measurements.js?v=23"></script>
+<script src="js/cycle.js?v=23"></script>
+<script src="js/water.js?v=23"></script>
+<script src="js/steps.js?v=23"></script>
+<script src="js/photos.js?v=23"></script>
+<script src="js/finance.js?v=23"></script>
+<script src="js/settings.js?v=23"></script>
+<script src="js/progress.js?v=23"></script>
+<script src="js/dashboard.js?v=23"></script>
+<script src="js/sync.js?v=23"></script>
+<script src="js/app.js?v=23"></script>
+<script src="js/v2.js?v=23"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

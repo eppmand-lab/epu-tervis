@@ -14,6 +14,7 @@ const Storage = {
     GYM_SESSIONS: 'fitness_gym_sessions',
     FINANCE_PLANS: 'fitness_finance_plans',
     FINANCE_TRANSACTIONS: 'fitness_finance_transactions',
+    FINANCE_GROUPS: 'fitness_finance_groups',
     FINANCE_RECURRING: 'fitness_finance_recurring',
     FINANCE_GOALS: 'fitness_finance_goals',
     FINANCE_MONTH_SUMMARY: 'fitness_finance_month_summary',
@@ -64,6 +65,7 @@ const Storage = {
       bodyFat: 28.8,
       cycleLength: 28,
       macros: { kcal: 1972, protein: 147, fat: 55, carbs: 222 },
+      macroTargetsVersion: 2,
       waterTarget: 2500,
       anthropicApiKey: '',
     };
@@ -78,7 +80,7 @@ const Storage = {
     }
     // Täienda puuduvad väljad vaikeväärtustega (nt. rakenduse esimene korras avamine).
     const defaults = this.defaultProfile();
-    return {
+    const profile = {
       ...defaults,
       ...stored,
       macros: {
@@ -86,6 +88,12 @@ const Storage = {
         ...(stored.macros && typeof stored.macros === 'object' ? stored.macros : {}),
       },
     };
+    if (stored.macroTargetsVersion !== defaults.macroTargetsVersion) {
+      profile.macros = { ...defaults.macros };
+      profile.macroTargetsVersion = defaults.macroTargetsVersion;
+      this.set(this.KEYS.PROFILE, profile);
+    }
+    return profile;
   },
 
   saveProfile(profile) {

@@ -1,48 +1,51 @@
 const GymPlans = {
   PROGRAMS: [
     {
-      id: 'day1', label: 'Päev 1 — Alakeha',
+      id: 'day1', label: 'Kava 1 — Jalad',
       exercises: [
-        { name: 'Smith machine squats', ref: '3 x 16/14/12' },
-        { name: 'Step ups (L+R)', ref: '3 x 16/14/12' },
+        { name: 'Hip thrust', ref: '3 x 16/14/12' },
+        { name: 'Smith squat', ref: '3 x 16/14/12' },
         { name: 'Romanian deadlift', ref: '3 x 16/14/12' },
-        { name: 'Calf raises', ref: '3 x 20/15/15' },
+        { name: 'Step-ups (L+R)', ref: '3 x 16/14/12' },
         { name: 'Hamstring curl', ref: '3 x 16/14/12' },
-        { name: 'Abs', ref: '' },
+        { name: 'Kõhulihased', ref: '3 seeriat' },
       ],
     },
     {
-      id: 'day2', label: 'Päev 2 — Terve keha',
-      exercises: [
-        { name: 'Deficit sumo squat', ref: '3 x 16/14/12' },
-        { name: 'Seated push press', ref: '4 x 16/14/12' },
-        { name: 'Bulgarian split squat (L+R)', ref: '3 x 16/14/12' },
-        { name: 'Leg extensions', ref: '3 x 16/14/12' },
-        { name: 'Lat push down', ref: '3 x 16/14/12' },
-        { name: 'Abs', ref: '' },
-      ],
-    },
-    {
-      id: 'day3', label: 'Päev 3 — Terve keha',
-      exercises: [
-        { name: 'Romanian deadlift', ref: '3 x 16/14/12' },
-        { name: 'Reverse deficit lunges (L+R)', ref: '3 x 16/14/12' },
-        { name: 'DB Y raise', ref: '3 x 12/12/10' },
-        { name: 'Hamstring curls', ref: '3 x 16/14/12' },
-        { name: 'Bent over back row', ref: '3 x 16/14/12' },
-        { name: 'Push up burnout', ref: '3 x maksimum' },
-        { name: 'Reverse crunches', ref: '4 x 20' },
-      ],
-    },
-    {
-      id: 'day4', label: 'Päev 4 — Ülakeha',
+      id: 'day2', label: 'Kava 2 — Ülakeha/käed',
       exercises: [
         { name: 'Chest press', ref: '3 x 16/14/12' },
-        { name: 'Bicep curls on cable', ref: '3 x 16/14/12' },
-        { name: 'Triceps pull down', ref: '3 x 16/14/12' },
-        { name: 'Face pulls', ref: '3 x 16/14/12' },
-        { name: 'Lat raise', ref: '3 x 16/14/12' },
-        { name: 'Abs', ref: '' },
+        { name: 'Lat pulldown masinal', ref: '3 x 16/14/12' },
+        { name: 'Seated cable row', ref: '3 x 16/14/12' },
+        { name: 'Lateral raise', ref: '3 x 16/14/12' },
+        { name: 'Face pull', ref: '3 x 16/14/12' },
+        { name: 'Cable biceps curl', ref: '3 x 16/14/12' },
+        { name: 'Triceps pushdown', ref: '3 x 16/14/12' },
+        { name: 'Kõhulihased', ref: '3 seeriat' },
+      ],
+    },
+    {
+      id: 'day3', label: 'Kava 3 — Segu',
+      exercises: [
+        { name: 'Deficit sumo squat', ref: '3 x 16/14/12' },
+        { name: 'Bulgarian split squat (L+R)', ref: '3 x 16/14/12' },
+        { name: 'Leg extension', ref: '3 x 16/14/12' },
+        { name: 'Hip abduction', ref: '3 x 16/14/12' },
+        { name: 'Seated push press', ref: '4 x 16/14/12' },
+        { name: 'Lat pushdown', ref: '3 x 16/14/12' },
+        { name: 'Calf raise', ref: '3 x 20/15/15' },
+      ],
+    },
+    {
+      id: 'day4', label: 'Kava 4 — Segu',
+      exercises: [
+        { name: 'Romanian deadlift', ref: '3 x 16/14/12' },
+        { name: 'Reverse deficit lunge (L+R)', ref: '3 x 16/14/12' },
+        { name: 'Hamstring curl', ref: '3 x 16/14/12' },
+        { name: 'Glute bridge', ref: '3 x 16/14/12' },
+        { name: 'Bent-over row', ref: '3 x 16/14/12' },
+        { name: 'DB Y raise', ref: '3 x 12/12/10' },
+        { name: 'Push-ups', ref: '3 x maksimum' },
       ],
     },
   ],
@@ -51,7 +54,7 @@ const GymPlans = {
   progressChart: null,
 
   getSessions() {
-    return Storage.get(Storage.KEYS.GYM_SESSIONS, []);
+    return Storage.get(Storage.KEYS.GYM_SESSIONS, []).filter(item => item && typeof item === 'object');
   },
 
   save(list) {
@@ -82,6 +85,15 @@ const GymPlans = {
     return null;
   },
 
+  lastEntryFor(exerciseName) {
+    const sessions = this.getSessions().slice().sort((a, b) => b.date.localeCompare(a.date));
+    for (const session of sessions) {
+      const entry = session.entries.find(e => e.exerciseName === exerciseName);
+      if (entry) return entry;
+    }
+    return null;
+  },
+
   renderProgramTabs() {
     const el = document.getElementById('gym-program-tabs');
     el.innerHTML = this.PROGRAMS.map(p => `
@@ -101,12 +113,13 @@ const GymPlans = {
     document.getElementById('gym-program-title').textContent = program.label;
     const el = document.getElementById('gym-exercise-rows');
     el.innerHTML = program.exercises.map((ex, i) => {
-      const last = this.lastWeightFor(ex.name);
+      const last = this.lastEntryFor(ex.name);
       return `
         <div class="gym-ex-row">
           <div class="gym-ex-name">${this._esc(ex.name)}</div>
           <div class="gym-ex-ref">${this._esc(ex.ref)}</div>
-          <input class="gym-ex-weight" type="number" step="0.5" placeholder="kg" data-idx="${i}" value="${last !== null ? last : ''}">
+          <input class="gym-ex-weight" type="number" step="0.5" placeholder="kg" data-idx="${i}" value="${last?.weight ?? ''}">
+          <input class="gym-ex-reps" type="text" inputmode="numeric" placeholder="nt 16/14/12" data-idx="${i}" value="${this._esc(last?.reps || '')}">
         </div>
       `;
     }).join('');
@@ -117,15 +130,17 @@ const GymPlans = {
     const program = this.getProgram(this.activeProgramId);
     const notes = document.getElementById('gym-notes').value.trim();
     const weightInputs = document.querySelectorAll('#gym-exercise-rows .gym-ex-weight');
+    const repsInputs = document.querySelectorAll('#gym-exercise-rows .gym-ex-reps');
     const entries = [];
     weightInputs.forEach(input => {
       const idx = parseInt(input.dataset.idx, 10);
       const weight = input.value === '' ? null : parseFloat(input.value);
-      if (weight !== null) {
-        entries.push({ exerciseName: program.exercises[idx].name, weight });
+      const reps = repsInputs[idx].value.trim();
+      if (weight !== null || reps) {
+        entries.push({ exerciseName: program.exercises[idx].name, weight, reps });
       }
     });
-    if (!entries.length) { UI.toast('Sisesta vähemalt ühe harjutuse raskus'); return; }
+    if (!entries.length) { UI.toast('Sisesta vähemalt ühe harjutuse raskus või kordused'); return; }
     this.addSession({ id: Fmt.uid(), date, programId: program.id, programLabel: program.label, entries, notes });
     document.getElementById('gym-notes').value = '';
     this.renderAll();
@@ -154,7 +169,7 @@ const GymPlans = {
     const points = sessions.map(s => ({
       date: s.date,
       weight: s.entries.find(e => e.exerciseName === exerciseName).weight,
-    }));
+    })).filter(p => p.weight !== null && p.weight !== undefined);
     const ctx = document.getElementById('chart-gym-progress');
     ChartTheme.destroy(this.progressChart);
     this.progressChart = new Chart(ctx, ChartTheme.base('line', {
@@ -190,7 +205,13 @@ const GymPlans = {
           <button class="he-remove" data-id="${s.id}">Kustuta</button>
         </div>
         <div class="he-title">${this._esc(s.programLabel)}</div>
-        <div class="he-sub">${s.entries.map(e => `${this._esc(e.exerciseName)}: ${e.weight}kg`).join(' · ')}</div>
+        <div class="he-sub">${s.entries.map(e => {
+          const detail = [
+            e.weight !== null && e.weight !== undefined ? `${e.weight}kg` : '',
+            e.reps ? `${this._esc(e.reps)} kordust` : '',
+          ].filter(Boolean).join(' · ');
+          return `${this._esc(e.exerciseName)}: ${detail}`;
+        }).join('<br>')}</div>
         ${s.notes ? `<div class="he-sub">${this._esc(s.notes)}</div>` : ''}
       </div>
     `).join('');

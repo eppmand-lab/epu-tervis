@@ -3,6 +3,7 @@ const Storage = {
   KEYS: {
     PROFILE: 'fitness_profile',
     FOOD_LOG: 'fitness_food_log',
+    RECIPES: 'fitness_recipes',
     WORKOUTS: 'fitness_workouts',
     MEASUREMENTS: 'fitness_measurements',
     CYCLE: 'fitness_cycle',
@@ -13,6 +14,7 @@ const Storage = {
     GYM_SESSIONS: 'fitness_gym_sessions',
     FINANCE_PLANS: 'fitness_finance_plans',
     FINANCE_TRANSACTIONS: 'fitness_finance_transactions',
+    FINANCE_GROUPS: 'fitness_finance_groups',
     FINANCE_RECURRING: 'fitness_finance_recurring',
     FINANCE_GOALS: 'fitness_finance_goals',
     FINANCE_MONTH_SUMMARY: 'fitness_finance_month_summary',
@@ -22,7 +24,15 @@ const Storage = {
     try {
       const raw = localStorage.getItem(key);
       if (raw === null) return fallback;
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed === null || parsed === undefined) return fallback;
+      if (Array.isArray(fallback)) {
+        return Array.isArray(parsed) ? parsed.filter(item => item !== null && item !== undefined) : fallback;
+      }
+      if (fallback && typeof fallback === 'object') {
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : fallback;
+      }
+      return parsed;
     } catch (e) {
       console.error('Storage.get error', key, e);
       return fallback;
@@ -32,6 +42,9 @@ const Storage = {
   set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      if (typeof CloudSync !== 'undefined' && CloudSync.ready && !CloudSync.applyingRemote) {
+        CloudSync.queue(key === this.KEYS.PHOTOS);
+      }
       return true;
     } catch (e) {
       console.error('Storage.set error', key, e);
@@ -52,6 +65,7 @@ const Storage = {
       bodyFat: 28.8,
       cycleLength: 28,
       macros: { kcal: 1972, protein: 147, fat: 55, carbs: 222 },
+      macroTargetsVersion: 2,
       waterTarget: 2500,
       anthropicApiKey: '',
     };
@@ -59,13 +73,27 @@ const Storage = {
 
   getProfile() {
     const stored = this.get(this.KEYS.PROFILE, null);
-    if (!stored) {
+    if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
       const def = this.defaultProfile();
       this.set(this.KEYS.PROFILE, def);
       return def;
     }
     // Täienda puuduvad väljad vaikeväärtustega (nt. rakenduse esimene korras avamine).
-    return Object.assign(this.defaultProfile(), stored);
+    const defaults = this.defaultProfile();
+    const profile = {
+      ...defaults,
+      ...stored,
+      macros: {
+        ...defaults.macros,
+        ...(stored.macros && typeof stored.macros === 'object' ? stored.macros : {}),
+      },
+    };
+    if (stored.macroTargetsVersion !== defaults.macroTargetsVersion) {
+      profile.macros = { ...defaults.macros };
+      profile.macroTargetsVersion = defaults.macroTargetsVersion;
+      this.set(this.KEYS.PROFILE, profile);
+    }
+    return profile;
   },
 
   saveProfile(profile) {

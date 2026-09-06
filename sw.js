@@ -1,10 +1,11 @@
-const CACHE_VERSION = 'epu-tervis-v21';
+const CACHE_VERSION = 'epu-tervis-v23';
 
 const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
   './css/style.css',
+  './css/v2.css',
   './js/storage.js',
   './js/utils.js',
   './js/charts.js',
@@ -18,15 +19,18 @@ const PRECACHE_URLS = [
   './js/photos.js',
   './js/finance.js',
   './js/settings.js',
-  './js/weekly.js',
   './js/progress.js',
   './js/dashboard.js',
   './js/sync.js',
   './js/app.js',
+  './js/v2.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png',
   './icons/apple-touch-icon.png',
+];
+
+const OPTIONAL_REMOTE_URLS = [
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
   'https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js',
 ];
@@ -34,7 +38,8 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) => cache.addAll(PRECACHE_URLS).then(() => cache))
+      .then((cache) => Promise.allSettled(OPTIONAL_REMOTE_URLS.map((url) => cache.add(url))))
       .then(() => self.skipWaiting())
   );
 });
@@ -55,6 +60,8 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
+      const isCode = event.request.mode === 'navigate' ||
+        ['script', 'style', 'document'].includes(event.request.destination);
       const network = fetch(event.request)
         .then((response) => {
           if (response && response.status === 200) {
@@ -64,7 +71,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => cached || caches.match('./index.html'));
-      return cached || network;
+      return isCode ? network : (cached || network);
     })
   );
 });
